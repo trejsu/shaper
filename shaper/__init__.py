@@ -1,7 +1,8 @@
 import json
 import logging.config
+from config import LOG_CONFIG
 
-path = 'logging.json'
-with open(path, 'rt') as f:
+
+with open(LOG_CONFIG, 'rt') as f:
     config = json.load(f)
 logging.config.dictConfig(config)
