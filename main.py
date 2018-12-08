@@ -1,12 +1,22 @@
 import argparse
+import logging
+
 from shaper.canvas import Canvas
+from shaper.shape import Triangle
 
 ARGS = None
+
+log = logging.getLogger(__name__)
 
 
 def main():
     canvas = Canvas(ARGS.input)
-    canvas.show()
+
+    for i in range(ARGS.n):
+        log.info(f'Action {i}')
+        t = Triangle.random(*canvas.size())
+        canvas.add(t)
+        canvas.show()
 
 
 if __name__ == '__main__':
