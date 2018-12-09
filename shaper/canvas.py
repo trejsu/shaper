@@ -53,7 +53,7 @@ class Canvas(object):
         self.mse = self.prev_mse
 
     def save(self, output):
-        mimg.imsave(output, self.img)
+        mimg.imsave(output, self.img.astype(np.uint8))
 
     def _score(self):
         return np.average(self.mse)

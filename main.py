@@ -34,10 +34,11 @@ def main():
             log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
             show()
 
-        best_score = score
         elapsed = time.time() - start
-        log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.1f} s, '
-                 f'({tries / elapsed:.1f} shapes/s), best score: {best_score:.3f}')
+        log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.2f} s, '
+                 f'({tries / elapsed:.1f} shapes/s), new score: {score:.4f}, '
+                 f'score delta {best_score - score:.4f}')
+        best_score = score
 
     if ARGS.output is not None:
         canvas.save(ARGS.output)
