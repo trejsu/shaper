@@ -14,3 +14,7 @@ def mse_full(target, x):
 
 def mse_partial(target, x, mask):
     return np.where(mask == 0, np.zeros(target.shape), np.square(target - x))
+
+
+def average_color(img):
+    return np.average(img, axis=(0, 1))

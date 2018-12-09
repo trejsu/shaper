@@ -20,7 +20,7 @@ def main():
     for i in range(1, ARGS.n + 1):
         start = time.time()
         tries = 0
-        t = Triangle.random(*canvas.size())
+        t = Triangle.random(*canvas.size(), alpha=ARGS.alpha)
         tries += 1
         score = canvas.add(t)
         log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
@@ -28,7 +28,7 @@ def main():
 
         while score > best_score:
             canvas.undo()
-            t = Triangle.random(*canvas.size())
+            t = Triangle.random(*canvas.size(), alpha=ARGS.alpha)
             tries += 1
             score = canvas.add(t)
             log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
@@ -57,5 +57,6 @@ if __name__ == '__main__':
     parser.add_argument('--render-mode', type=int,
                         help='Render mode: 0 - click, 1 - automatic, 2 - no render',
                         choices=[0, 1, 2], default=0)
+    parser.add_argument('--alpha', type=float, help="Alpha value [0, 1]", default=0.5)
     ARGS = parser.parse_args()
     main()

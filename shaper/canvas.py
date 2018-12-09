@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.imgutils import mse_full, mse_partial
+from shaper.imgutils import mse_full, mse_partial, average_color
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class Canvas(object):
     def __init__(self, target):
         self.target = mimg.imread(target)[:, :, :3].astype(np.float)
-        self.img = np.full(self.target.shape, 255, dtype=np.float)
+        self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
         self.prev_img = None
         self.prev_mse = None
