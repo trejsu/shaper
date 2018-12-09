@@ -71,3 +71,18 @@ def test_mse_partial_should_calculate_mse_properly():
     mask = np.array([[1, 0], [0, 1]])
     mse = mse_partial(target=target, x=x, mask=mask)
     assert np.array_equal(mse, np.array([[0, 0], [0, 1]]))
+
+
+def test_mse_full_should_return_float_array():
+    target = np.random.random((100, 100))
+    x = np.random.random((100, 100))
+    mse = mse_full(target=target, x=x)
+    assert mse.dtype == np.float
+
+
+def test_mse_partial_should_return_float_array():
+    target = np.random.random((100, 100))
+    x = np.random.random((100, 100))
+    mask = np.random.randint(2, size=target.shape)
+    mse = mse_partial(target=target, x=x, mask=mask)
+    assert mse.dtype == np.float

@@ -14,8 +14,8 @@ log = logging.getLogger(__name__)
 
 class Canvas(object):
     def __init__(self, target):
-        self.target = mimg.imread(target)
-        self.img = np.full(self.target.shape, 255, dtype=np.uint8)
+        self.target = mimg.imread(target)[:, :, :3].astype(np.float)
+        self.img = np.full(self.target.shape, 255, dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
         self.prev_img = None
         self.prev_mse = None
@@ -23,17 +23,16 @@ class Canvas(object):
         log.debug(f'Initialized canvas with target shape: {self.target.shape}')
         log.debug(f'Target min: {np.min(self.target)}, target max: {np.max(self.target)}')
         assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
-        assert self.target.dtype == np.uint8, f'Unexpected target type: {self.target.dtype}'
 
     def init(self):
         return self._score()
 
     def show_and_wait(self):
-        plt.imshow(np.concatenate((self.target, self.img), axis=1))
+        plt.imshow(np.concatenate((self.target / 255, self.img / 255), axis=1))
         plt.waitforbuttonpress()
 
     def show(self):
-        img = np.concatenate((self.target, self.img), axis=1)
+        img = np.concatenate((self.target / 255, self.img / 255), axis=1)
         plt.imshow(img)
         plt.show(block=False)
 
