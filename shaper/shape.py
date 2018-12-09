@@ -20,9 +20,13 @@ class Shape(object):
 
 
 class Triangle(Shape):
+    ALPHA = 0.8
+
     def __init__(self, points, color):
         self.points = points
         self.color = color
+        self.a_color = self.color * Triangle.ALPHA
+        self.a_current = 1 - Triangle.ALPHA
 
     def __str__(self):
         return f'Triangle: A = {self.points[0]}, B = {self.points[1]}, C = {self.points[2]}, ' \
@@ -69,7 +73,7 @@ class Triangle(Shape):
             end_x = int(f(x1, y1, x2, y2, y))
 
             for x in range(start_x, end_x, 1 if start_x < end_x else -1):
-                img[y, x] = self.color
+                img[y, x] = img[y, x] * self.a_current + self.a_color
                 changed[y, x] = 1
 
         return changed
