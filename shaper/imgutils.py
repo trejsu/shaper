@@ -9,4 +9,8 @@ def resize(img, w, h):
 
 
 def mse_full(target, x):
-    return np.average(np.square(target - x))
+    return np.square(target - x)
+
+
+def mse_partial(target, x, mask):
+    return np.where(mask == 0, np.zeros(target.shape), np.square(target - x))

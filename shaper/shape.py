@@ -45,6 +45,8 @@ class Triangle(Shape):
         def f(x1, y1, x2, y2, y):
             return ((y - y1) * x2 + (y2 - y) * x1) / (y2 - y1)
 
+        changed = np.zeros(img.shape)
+
         upper = np.argmin(self.points[:, 1:])
         lower = np.argmax(self.points[:, 1:])
         third = [x for x in range(3) if x != upper and x != lower][0]
@@ -68,3 +70,6 @@ class Triangle(Shape):
 
             for x in range(start_x, end_x, 1 if start_x < end_x else -1):
                 img[y, x] = self.color
+                changed[y, x] = 1
+
+        return changed

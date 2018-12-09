@@ -39,6 +39,13 @@
         "console"
       ],
       "propagate": false
+    },
+    "matplotlib.blocking_input": {
+      "level": "WARN",
+      "handlers": [
+        "console"
+      ],
+      "propagate": false
     }
   },
   "root": {
