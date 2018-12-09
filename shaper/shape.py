@@ -31,22 +31,20 @@ def render(img, points, a_current, a_color):
 
     upper = np.argmin(points[:, 1:])
     lower = np.argmax(points[:, 1:])
-    third = [x for x in range(3) if x != upper and x != lower][0]
 
-    upper_y = points[upper][1]
-    upper_x = points[upper][0]
-    lower_y = points[lower][1]
-    lower_x = points[lower][0]
+    upper_point = points[upper]
+    lower_point = points[lower]
+    third_point = points[3 - (upper + lower)]
 
-    for y in range(upper_y, lower_y):
-        start_x = int(f(upper_x, upper_y, lower_x, lower_y, y))
+    for y in range(upper_point[1], lower_point[1]):
+        start_x = int(f(upper_point[0], upper_point[1], lower_point[0], lower_point[1], y))
 
-        if y < points[third][1]:
-            x1, y1 = points[upper]
-            x2, y2 = points[third]
+        if y < third_point[1]:
+            x1, y1 = upper_point
+            x2, y2 = third_point
         else:
-            x1, y1 = points[third]
-            x2, y2 = points[lower]
+            x1, y1 = third_point
+            x2, y2 = lower_point
 
         end_x = int(f(x1, y1, x2, y2, y))
 
