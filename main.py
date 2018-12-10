@@ -17,6 +17,9 @@ def main():
     best_score = canvas.init()
     log.info(f'Initial score: {best_score}')
 
+    global_start = time.time()
+    global_tries = 0
+
     for i in range(1, ARGS.n + 1):
         start = time.time()
         tries = 0
@@ -39,6 +42,11 @@ def main():
                  f'({tries / elapsed:.1f} shapes/s), new score: {score:.4f}, '
                  f'score delta {best_score - score:.4f}')
         best_score = score
+        global_tries += tries
+
+    global_elapsed = time.time() - global_start
+    log.info(f'Total shapes drawned {global_tries}, time {global_elapsed:.2f} s, '
+             f'({global_tries / global_elapsed:.1f} shapes/s)')
 
     if ARGS.output is not None:
         canvas.save(ARGS.output)

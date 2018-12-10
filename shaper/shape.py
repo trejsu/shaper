@@ -25,10 +25,8 @@ def f(x1, y1, x2, y2, y):
     return ((y - y1) * x2 + (y2 - y) * x1) / (y2 - y1)
 
 
-@njit("f8[:,:,:](f8[:,:,:], i8[:,:], f8, f8[:])")
+@njit("(f8[:,:,:], i8[:,:], f8, f8[:])")
 def render(img, points, a_current, a_color):
-    changed = np.zeros(img.shape)
-
     upper = np.argmin(points[:, 1:])
     lower = np.argmax(points[:, 1:])
 
@@ -50,9 +48,6 @@ def render(img, points, a_current, a_color):
 
         for x in range(start_x, end_x, 1 if start_x < end_x else -1):
             img[y, x] = img[y, x] * a_current + a_color
-            changed[y, x] = 1
-
-    return changed
 
 
 class Triangle(Shape):
@@ -81,4 +76,4 @@ class Triangle(Shape):
         pass
 
     def render(self, img):
-        return render(img, self.points, self.a_current, self.a_color)
+        render(img, self.points, self.a_current, self.a_color)

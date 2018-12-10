@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.imgutils import mse_full, mse_partial, average_color
+from shaper.imgutils import mse_full, average_color
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -39,10 +39,8 @@ class Canvas(object):
     def add(self, shape):
         self.prev_img = self.img.copy()
         self.prev_mse = self.mse
-        changed = shape.render(self.img)
-        changed_mse = mse_partial(self.target, self.img, changed)
-        assert changed.shape == changed_mse.shape
-        self.mse = np.where(changed == 0, self.mse, changed_mse)
+        shape.render(self.img)
+        self.mse = mse_full(self.target, self.img)
         return self._score()
 
     def size(self):
