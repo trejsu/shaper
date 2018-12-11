@@ -27,7 +27,6 @@ def main():
         tries += 1
         score = canvas.add(t)
         log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
-        show()
 
         while score > best_score:
             canvas.undo()
@@ -35,7 +34,8 @@ def main():
             tries += 1
             score = canvas.add(t)
             log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
-            show()
+
+        show()
 
         elapsed = time.time() - start
         log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.2f} s, '
@@ -53,8 +53,7 @@ def main():
 
 
 def show_function(canvas):
-    return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 \
-        else lambda: None
+    return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
 
 
 if __name__ == '__main__':

@@ -20,6 +20,7 @@ class Canvas(object):
         self.prev_img = None
         self.prev_mse = None
         self.showed = None
+        self.fig = None
         log.debug(f'Initialized canvas with target shape: {self.target.shape}')
         log.debug(f'Target min: {np.min(self.target)}, target max: {np.max(self.target)}')
         assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
@@ -28,13 +29,21 @@ class Canvas(object):
         return self._score()
 
     def show_and_wait(self):
-        plt.imshow(np.concatenate((self.target / 255, self.img / 255), axis=1))
+        plt.imshow(self._showable_img())
         plt.waitforbuttonpress()
 
+    def _showable_img(self):
+        return np.concatenate((self.target / 255, self.img / 255), axis=1)
+
     def show(self):
-        img = np.concatenate((self.target / 255, self.img / 255), axis=1)
-        plt.imshow(img)
-        plt.show(block=False)
+        img = self._showable_img()
+        if self.fig is None:
+            plt.ion()
+            self.fig = plt.figure()
+            self.showed = plt.imshow(img)
+        else:
+            self.showed.set_data(img)
+            self.fig.canvas.draw()
 
     def add(self, shape):
         self.prev_img = self.img.copy()
