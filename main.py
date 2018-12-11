@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, help='Output image')
     parser.add_argument('--render-mode', type=int,
                         help='Render mode: 0 - click, 1 - automatic, 2 - no render',
-                        choices=[0, 1, 2], default=0)
+                        choices=[0, 1, 2], default=2)
     parser.add_argument('--alpha', type=float, help="Alpha value [0, 1]", default=0.5)
     ARGS = parser.parse_args()
     main()
