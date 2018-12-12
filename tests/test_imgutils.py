@@ -86,3 +86,5 @@ def test_mse_partial_should_return_float_array():
     mask = np.random.randint(2, size=target.shape)
     mse = mse_partial(target=target, x=x, mask=mask)
     assert mse.dtype == np.float
+
+# todo: test avg_color when shape is straight line of 1px width
