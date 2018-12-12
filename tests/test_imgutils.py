@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.imgutils import resize, mse_full, mse_partial
+from shaper.imgutils import resize, mse_full, mse_partial, update_mse
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -87,4 +87,37 @@ def test_mse_partial_should_return_float_array():
     mse = mse_partial(target=target, x=x, mask=mask)
     assert mse.dtype == np.float
 
+
 # todo: test avg_color when shape is straight line of 1px width
+
+def test_update_mse():
+    mse = np.zeros((100, 100, 3))
+    bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
+    img = np.random.random((100, 100, 3))
+    target = np.random.random((100, 100, 3))
+    update_mse(mse, bounds, img, target)
+    assert np.all(mse[50, 50:61])
+    assert np.all(mse[51, 50:61])
+    assert np.all(mse[52, 50:61])
+
+
+def test_update_mse_should_calculate_the_same_values_as_full_mse_for_bounded_area():
+    mse = np.zeros((100, 100, 3))
+    bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
+    img = np.random.random((100, 100, 3))
+    target = np.random.random((100, 100, 3))
+    update_mse(mse, bounds, img, target)
+    full = mse_full(target, img)
+    assert np.array_equal(full[np.where(mse > 0)], mse[np.where(mse > 0)])
+
+
+def test_update_mse_should_have_the_same_effect_as_full_mse():
+    bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
+    target = np.random.random((100, 100, 3))
+    img = np.random.random((100, 100, 3))
+    mse = mse_full(target, img)
+    img[50, 50:61] = 0.5
+    img[51, 50:61] = 0.4
+    img[52, 50:61] = 0.3
+    update_mse(mse, bounds, img, target)
+    assert np.array_equal(mse, mse_full(target, img))

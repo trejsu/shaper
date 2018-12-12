@@ -48,7 +48,8 @@ class Canvas(object):
     def add(self, shape):
         self.prev_img = self.img.copy()
         self.prev_mse = self.mse
-        shape.render(self.img, self.target)
+        bounds = shape.render(self.img, self.target)
+        # update_mse(self.mse, bounds, self.img, self.target)
         self.mse = mse_full(self.target, self.img)
         return self._score()
 
