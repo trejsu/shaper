@@ -9,7 +9,10 @@ class Shape(object):
     @staticmethod
     @abstractmethod
     def random(w, h, alpha):
-        raise NotImplementedError
+        return {
+            0: Triangle.random,
+            1: Rectangle.random
+        }[np.random.randint(2)](w=w, h=h, alpha=alpha)
 
     @staticmethod
     @abstractmethod

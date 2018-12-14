@@ -3,7 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.shape import Triangle, Rectangle
+from shaper.shape import Shape
 
 ARGS = None
 
@@ -23,21 +23,21 @@ def main():
     for i in range(1, ARGS.n + 1):
         start = time.time()
         tries = 0
-        t = Rectangle.random(*canvas.size(), alpha=ARGS.alpha)
+        shape = Shape.random(*canvas.size(), alpha=ARGS.alpha)
         tries += 1
-        score = canvas.add(t)
+        score = canvas.add(shape)
         log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
         show()
 
         while score > best_score:
             canvas.undo()
-            t = Rectangle.random(*canvas.size(), alpha=ARGS.alpha)
+            shape = Shape.random(*canvas.size(), alpha=ARGS.alpha)
             tries += 1
-            score = canvas.add(t)
+            score = canvas.add(shape)
             log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
             show()
 
-        show()
+        # show()
 
         elapsed = time.time() - start
         log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.2f} s, '
