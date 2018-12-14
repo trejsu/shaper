@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from shaper.imgutils import resize, mse_full, mse_partial, update_mse
+from shaper.shape import Rectangle
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -121,3 +122,24 @@ def test_update_mse_should_have_the_same_effect_as_full_mse():
     img[52, 50:61] = 0.3
     update_mse(mse, bounds, img, target)
     assert np.array_equal(mse, mse_full(target, img))
+
+
+# todo: move to canvas tests and rename
+@pytest.mark.parametrize("x1, y1, x2, y2, x3, y3, x4, y4", [
+    (244, 93, 509, 125, 449, 628, 184, 596),
+    (140, -237, 421, 76, 47, 409, -233, 95),
+    (427, 145, 139, 436, 108, 406, 396, 115)
+])
+def test_broken_partial_mse(x1, y1, x2, y2, x3, y3, x4, y4):
+    img = np.zeros((500, 500, 3))
+    target = np.zeros((500, 500, 3))
+    mse = np.zeros((500, 500, 3))
+    assert img.dtype == np.float
+    assert target.dtype == np.float
+    assert mse.dtype == np.float
+    r = Rectangle(points=np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]], dtype=np.int64),
+                  alpha=0.5)
+    bounds = r.render(img, target)
+    update_mse(mse=mse, bounds=bounds, img=img, target=target)
+    assert np.array_equal(mse, mse_full(target, img))
+    assert np.average(mse) == np.average(mse_full(target, img))
