@@ -30,8 +30,6 @@ class Rectangle(Shape):
         rh = np.random.randint(1, h)
         rot = np.random.uniform(0, math.pi)
 
-        # todo: maybe it would be better to move it to rasterize_rectangle?
-        # todo: are the calculated points needed elsewhere?
         x1 = cx + math.sin(
             (rot - deg_to_rad(90)) + math.asin(rh / (math.sqrt(rh * rh + rw * rw)))) * (
                  math.sqrt(rh * rh + rw * rw) / 2)

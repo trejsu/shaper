@@ -35,6 +35,10 @@ class Ellipse(Shape):
     def get_alpha(self):
         return self.alpha
 
+    def __str__(self):
+        return f'Ellipse: a = {self.a}, b = {self.b}, cx = {self.h}, cy = {self.k}, ' \
+               f'rotation = {self.r}'
+
 
 @njit("i8[:,:](f8, f8, f8, f8, f8)")
 def rasterize_ellipse(a, b, h, k, r):
