@@ -3,7 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.strategy import RandomStrategy
+from shaper.strategy import SimpleEvolutionStrategy
 
 ARGS = None
 
@@ -24,7 +24,7 @@ def main():
     start = time.time()
 
     for i in range(1, ARGS.n + 1):
-        strategy = RandomStrategy(NUM_SOLUTIONS, *canvas.size(), alpha=ARGS.alpha)
+        strategy = SimpleEvolutionStrategy(NUM_SOLUTIONS, *canvas.size(), alpha=ARGS.alpha)
         best_score = 9223372036854775807
         best_shape = None
 
@@ -38,6 +38,7 @@ def main():
                 best_score = score
                 best_shape = shape
 
+        log.info(f'Best shape: {best_shape}')
         score = canvas.add(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
         show()

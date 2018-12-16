@@ -9,10 +9,10 @@ from .shape import Shape
 class Ellipse(Shape):
 
     def __init__(self, a, b, h, k, r, alpha):
-        self.a = a
-        self.b = b
-        self.h = h
-        self.k = k
+        self.a = int(a)
+        self.b = int(b)
+        self.h = int(h)
+        self.k = int(k)
         self.r = r
         self.alpha = alpha
 
@@ -26,8 +26,8 @@ class Ellipse(Shape):
         return Ellipse(a=a, b=b, h=center_x, k=center_y, r=rotation, alpha=alpha)
 
     @staticmethod
-    def from_params(**params):
-        return Ellipse(**params)
+    def from_params(*params):
+        return Ellipse(*params)
 
     def get_bounds(self):
         return rasterize_ellipse(a=self.a, b=self.b, h=self.h, k=self.k, r=self.r)
@@ -35,11 +35,19 @@ class Ellipse(Shape):
     def get_alpha(self):
         return self.alpha
 
+    def args(self):
+        return [self.a, self.b, self.h, self.k, self.r]
+
+    @staticmethod
+    def args_intervals():
+        return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
+
     def __str__(self):
         return f'Ellipse: a = {self.a}, b = {self.b}, cx = {self.h}, cy = {self.k}, ' \
                f'rotation = {self.r}'
 
 
+# todo: find bug with eigvalues
 @njit("i8[:,:](f8, f8, f8, f8, f8)")
 def rasterize_ellipse(a, b, h, k, r):
     b_b = b * b

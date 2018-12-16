@@ -11,7 +11,7 @@ class Shape(object):
 
     @staticmethod
     @abstractmethod
-    def from_params(**params):
+    def from_params(*params):
         raise NotImplementedError
 
     def render(self, img, target):
@@ -27,6 +27,15 @@ class Shape(object):
 
     @abstractmethod
     def get_alpha(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def args(self):
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def args_intervals():
         raise NotImplementedError
 
 

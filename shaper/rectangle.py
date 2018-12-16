@@ -9,11 +9,11 @@ from .shape import Shape, f
 class Rectangle(Shape):
 
     def __init__(self, points, alpha):
-        self.points = points
+        self.points = points.astype(np.int64)
         self.alpha = alpha
 
     def __str__(self):
-        return f'Triangle: A = {self.points[0]}, B = {self.points[1]}, ' \
+        return f'Rectangle: A = {self.points[0]}, B = {self.points[1]}, ' \
                f'C = {self.points[2]}, D = {self.points[3]}'
 
     @staticmethod
@@ -46,14 +46,21 @@ class Rectangle(Shape):
                          alpha=alpha)
 
     @staticmethod
-    def from_params(**params):
-        pass
+    def from_params(*params):
+        return Rectangle(points=np.array(params[:-1]).reshape(4, 2), alpha=params[-1])
 
     def get_bounds(self):
         return rasterize_rectangle(self.points)
 
     def get_alpha(self):
         return self.alpha
+
+    def args(self):
+        return self.points.reshape(-1, )
+
+    @staticmethod
+    def args_intervals():
+        return lambda w, h: np.array([w, h, w, h, w, h, w, h])
 
 
 @njit("i8[:,:](i8[:,:])")
@@ -63,7 +70,7 @@ def rasterize_rectangle(points):
     left = np.argmin(points[:, 0])
     right = 6 - (upper + lower + left)
 
-    # todo: add +1 to bounds size
+    # todo: why +1 breaks things?
     bounds = np.empty((points[lower][1] - points[upper][1], 3), dtype=np.int64)
 
     i = 0

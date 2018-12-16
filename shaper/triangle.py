@@ -7,7 +7,7 @@ from .shape import Shape, f
 class Triangle(Shape):
 
     def __init__(self, points, alpha):
-        self.points = points
+        self.points = points.astype(np.int64)
         self.alpha = alpha
 
     def __str__(self):
@@ -22,14 +22,21 @@ class Triangle(Shape):
         return Triangle(points, alpha)
 
     @staticmethod
-    def from_params(**params):
-        pass
+    def from_params(*params):
+        return Triangle(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
     def get_bounds(self):
         return rasterize_triangle(self.points)
 
     def get_alpha(self):
         return self.alpha
+
+    def args(self):
+        return self.points.reshape(-1, )
+
+    @staticmethod
+    def args_intervals():
+        return lambda w, h: np.array([w, h, w, h, w, h])
 
 
 @njit("i8[:,:](i8[:,:])")
@@ -41,7 +48,7 @@ def rasterize_triangle(points):
     lower_point = points[lower]
     third_point = points[3 - (upper + lower)]
 
-    # todo: add + 1 to bounds size
+    # todo: why +1 breaks things?
     bounds = np.empty((lower_point[1] - upper_point[1], 3), dtype=np.int64)
 
     i = 0
