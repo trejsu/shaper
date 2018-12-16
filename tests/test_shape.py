@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from shaper.ellipse import Ellipse
 from shaper.rectangle import Rectangle
 from shaper.shape import crop_bounds
 
@@ -71,52 +70,3 @@ def test_opposite_rectangle_points_should_sum_up():
     bdy = r.points[1][1] + r.points[3][1]
     acy = r.points[0][1] + r.points[2][1]
     assert bdy - 1 <= acy <= bdy + 1
-
-
-def test_ellipse_coefficients_should_be_properly_calculated():
-    cx = 2
-    cy = 5
-    a = 5
-    b = 3
-    rotation = 2
-    e = Ellipse.from_params(
-        **{'cx': cx, 'cy': cy, 'a': a, 'b': b, 'rotation': rotation, 'alpha': 1})
-    A = 22.22
-    B = 11.77
-    C = -28.37
-    D = -93.49
-    E = -12.10
-    F = 37.09
-    np.testing.assert_almost_equal(e.A, A, decimal=2)
-    np.testing.assert_almost_equal(e.B, B, decimal=2)
-    np.testing.assert_almost_equal(e.C, C, decimal=2)
-    np.testing.assert_almost_equal(e.D, D, decimal=2)
-    np.testing.assert_almost_equal(e.E, E, decimal=2)
-    np.testing.assert_almost_equal(e.F, F, decimal=2)
-
-
-# todo: remove?
-def test_calculating_ellipse_limits():
-    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2, 'alpha': 1})
-    a = 4 * e.A * e.B - (e.E * e.E)
-    b = 4 * e.A * e.D - 2 * e.C * e.E
-    c = 4 * e.A * e.F - (e.C * e.C)
-    roots = np.roots([a, b, c])
-    np.testing.assert_almost_equal(np.real(roots[0]), 9.715, decimal=3)
-    np.testing.assert_almost_equal(np.real(roots[1]), 0.285, decimal=3)
-
-
-# todo: remove?
-@pytest.mark.parametrize("y, expected_x1, expected_x2", [
-    (9.715, 3.284, 3.284),
-    (7.525, 0.001, 5.374),
-    (4, -1.381, 4.837)
-])
-def test_calculating_x1_and_x2_given_y_for_ellipse(y, expected_x1, expected_x2):
-    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2, 'alpha': 1})
-    a = e.A
-    b = e.C + e.E * y
-    c = e.B * y * y + e.D * y + e.F
-    roots = np.roots([a, b, c])
-    np.testing.assert_almost_equal(np.real(roots[1]), expected_x1, decimal=3)
-    np.testing.assert_almost_equal(np.real(roots[0]), expected_x2, decimal=3)

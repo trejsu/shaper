@@ -1,65 +1,60 @@
 import math
 
 import numpy as np
+from numba import njit
 
 from .shape import Shape
-from numba import njit
 
 
 class Ellipse(Shape):
 
-    def __init__(self, A, B, C, D, E, F, alpha):
-        self.A = A
-        self.B = B
-        self.C = C
-        self.D = D
-        self.E = E
-        self.F = F
+    def __init__(self, a, b, h, k, r, alpha):
+        self.a = a
+        self.b = b
+        self.h = h
+        self.k = k
+        self.r = r
         self.alpha = alpha
 
     @staticmethod
     def random(w, h, alpha):
-        cx = np.random.randint(w)
-        cy = np.random.randint(h)
+        center_x = np.random.randint(w)
+        center_y = np.random.randint(h)
         a = np.random.randint(1, w)
         b = np.random.randint(1, h)
         rotation = np.random.uniform(0, math.pi)
-        return Ellipse.from_params(
-            **{'cx': cx, 'cy': cy, 'a': a, 'b': b, 'rotation': rotation, 'alpha': alpha})
+        return Ellipse(a=a, b=b, h=center_x, k=center_y, r=rotation, alpha=alpha)
 
     @staticmethod
     def from_params(**params):
-        # todo: maybe it would be better to move it to rasterize_ellipse?
-        # todo: are the calculated coefficients needed elsewhere?
-        b_b = params['b'] * params['b']
-        a_a = params['a'] * params['a']
-        sin2 = math.sin(2 * params['rotation'])
-        h = params['cx']
-        k = params['cy']
-        cos_cos = math.cos(params['rotation']) * math.cos(params['rotation'])
-        sin_sin = math.sin(params['rotation']) * math.sin(params['rotation'])
-        h_h = h * h
-        k_k = k * k
-        h_k_sin2 = h * k * sin2
-
-        A = b_b * cos_cos + a_a * sin_sin
-        B = a_a * cos_cos + b_b * sin_sin
-        C = -2 * b_b * h * cos_cos - (a_a - b_b) * k * sin2 - 2 * a_a * h * sin_sin
-        D = -2 * a_a * k * cos_cos - (a_a - b_b) * h * sin2 - 2 * b_b * k * sin_sin
-        E = (a_a - b_b) * sin2
-        F = (b_b * h_h + a_a * k_k) * cos_cos - b_b * h_k_sin2 + (
-            a_a * h_h + b_b * k_k) * sin_sin + a_a * (-b_b + h_k_sin2)
-        return Ellipse(A, B, C, D, E, F, params['alpha'])
+        return Ellipse(**params)
 
     def get_bounds(self):
-        return rasterize_ellipse(self.A, self.B, self.C, self.D, self.E, self.F)
+        return rasterize_ellipse(a=self.a, b=self.b, h=self.h, k=self.k, r=self.r)
 
     def get_alpha(self):
         return self.alpha
 
 
-@njit("i8[:,:](f8, f8, f8, f8, f8, f8)")
-def rasterize_ellipse(A, B, C, D, E, F):
+@njit("i8[:,:](f8, f8, f8, f8, f8)")
+def rasterize_ellipse(a, b, h, k, r):
+    b_b = b * b
+    a_a = a * a
+    sin2 = math.sin(2 * r)
+    cos_cos = math.cos(r) * math.cos(r)
+    sin_sin = math.sin(r) * math.sin(r)
+    h_h = h * h
+    k_k = k * k
+    h_k_sin2 = h * k * sin2
+
+    A = b_b * cos_cos + a_a * sin_sin
+    B = a_a * cos_cos + b_b * sin_sin
+    C = -2 * b_b * h * cos_cos - (a_a - b_b) * k * sin2 - 2 * a_a * h * sin_sin
+    D = -2 * a_a * k * cos_cos - (a_a - b_b) * h * sin2 - 2 * b_b * k * sin_sin
+    E = (a_a - b_b) * sin2
+    F = (b_b * h_h + a_a * k_k) * cos_cos - b_b * h_k_sin2 + (
+        a_a * h_h + b_b * k_k) * sin_sin + a_a * (-b_b + h_k_sin2)
+
     a_y = 4 * A * B - E * E
     b_y = 4 * A * D - 2 * C * E
     c_y = 4 * A * F - C * C
