@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from shaper.imgutils import resize, mse_full, mse_partial, update_mse
-from shaper.shape import Rectangle
+from shaper.rectangle import Rectangle
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [

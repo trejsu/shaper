@@ -1,9 +1,12 @@
 import argparse
 import logging
 import time
+import numpy as np
 
 from shaper.canvas import Canvas
-from shaper.shape import Shape
+from shaper.ellipse import Ellipse
+from shaper.rectangle import Rectangle
+from shaper.triangle import Triangle
 
 ARGS = None
 
@@ -23,7 +26,7 @@ def main():
     for i in range(1, ARGS.n + 1):
         start = time.time()
         tries = 0
-        shape = Shape.random(*canvas.size(), alpha=ARGS.alpha)
+        shape = random_shape(*canvas.size(), alpha=ARGS.alpha)
         tries += 1
         score = canvas.add(shape)
         log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
@@ -31,13 +34,11 @@ def main():
 
         while score > best_score:
             canvas.undo()
-            shape = Shape.random(*canvas.size(), alpha=ARGS.alpha)
+            shape = random_shape(*canvas.size(), alpha=ARGS.alpha)
             tries += 1
             score = canvas.add(shape)
             log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
             show()
-
-        # show()
 
         elapsed = time.time() - start
         log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.2f} s, '
@@ -56,6 +57,14 @@ def main():
 
 def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
+
+
+def random_shape(w, h, alpha):
+    return {
+        0: Triangle.random,
+        1: Rectangle.random,
+        2: Ellipse.random
+    }[np.random.randint(3)](w=w, h=h, alpha=alpha)
 
 
 if __name__ == '__main__':

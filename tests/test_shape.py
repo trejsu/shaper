@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
 
-from shaper.shape import crop_bounds, Rectangle, Ellipse
+from shaper.ellipse import Ellipse
+from shaper.rectangle import Rectangle
+from shaper.shape import crop_bounds
 
 
 def test_should_leave_bounds_unchanged_if_no_need_to_crop():
@@ -77,7 +79,8 @@ def test_ellipse_coefficients_should_be_properly_calculated():
     a = 5
     b = 3
     rotation = 2
-    e = Ellipse.from_params(**{'cx': cx, 'cy': cy, 'a': a, 'b': b, 'rotation': rotation})
+    e = Ellipse.from_params(
+        **{'cx': cx, 'cy': cy, 'a': a, 'b': b, 'rotation': rotation, 'alpha': 1})
     A = 22.22
     B = 11.77
     C = -28.37
@@ -94,7 +97,7 @@ def test_ellipse_coefficients_should_be_properly_calculated():
 
 # todo: remove?
 def test_calculating_ellipse_limits():
-    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2})
+    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2, 'alpha': 1})
     a = 4 * e.A * e.B - (e.E * e.E)
     b = 4 * e.A * e.D - 2 * e.C * e.E
     c = 4 * e.A * e.F - (e.C * e.C)
@@ -110,7 +113,7 @@ def test_calculating_ellipse_limits():
     (4, -1.381, 4.837)
 ])
 def test_calculating_x1_and_x2_given_y_for_ellipse(y, expected_x1, expected_x2):
-    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2})
+    e = Ellipse.from_params(**{'cx': 2, 'cy': 5, 'a': 5, 'b': 3, 'rotation': 2, 'alpha': 1})
     a = e.A
     b = e.C + e.E * y
     c = e.B * y * y + e.D * y + e.F
