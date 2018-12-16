@@ -62,5 +62,10 @@ class Canvas(object):
     def save(self, output):
         mimg.imsave(output, self.img.astype(np.uint8))
 
+    def evaluate(self, shape):
+        score = self.add(shape)
+        self.undo()
+        return score
+
     def _score(self):
         return np.average(self.mse)

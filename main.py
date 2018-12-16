@@ -1,55 +1,51 @@
 import argparse
 import logging
 import time
-import numpy as np
 
 from shaper.canvas import Canvas
-from shaper.ellipse import Ellipse
-from shaper.rectangle import Rectangle
-from shaper.triangle import Triangle
+from shaper.strategy import RandomStrategy
 
 ARGS = None
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# todo: move to some config
+NUM_SOLUTIONS = 100
+NUM_IMPROVEMENTS = 10
+
 
 def main():
     canvas = Canvas(ARGS.input)
     show = show_function(canvas)
-    best_score = canvas.init()
-    log.info(f'Initial score: {best_score}')
+    score = canvas.init()
+    log.info(f'Initial score: {score}')
 
-    global_start = time.time()
-    global_tries = 0
+    start = time.time()
 
     for i in range(1, ARGS.n + 1):
-        start = time.time()
-        tries = 0
-        shape = random_shape(*canvas.size(), alpha=ARGS.alpha)
-        tries += 1
-        score = canvas.add(shape)
-        log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
+        strategy = RandomStrategy(NUM_SOLUTIONS, *canvas.size(), alpha=ARGS.alpha)
+        best_score = 9223372036854775807
+        best_shape = None
+
+        for j in range(1, NUM_IMPROVEMENTS + 1):
+            shapes = strategy.ask()
+            scores = [canvas.evaluate(shape) for shape in shapes]
+            strategy.tell(scores)
+            shape, score = strategy.result()
+
+            if score < best_score:
+                best_score = score
+                best_shape = shape
+
+        score = canvas.add(best_shape)
+        log.info(f'Action {i}, new score: {score:.4f}')
         show()
 
-        while score > best_score:
-            canvas.undo()
-            shape = random_shape(*canvas.size(), alpha=ARGS.alpha)
-            tries += 1
-            score = canvas.add(shape)
-            log.debug(f'Action {i}, try {tries}, best score: {best_score}, score: {score}')
-            show()
-
-        elapsed = time.time() - start
-        log.info(f'Action {i}, shapes drawned {tries}, time {elapsed:.2f} s, '
-                 f'({tries / elapsed:.1f} shapes/s), new score: {score:.4f}, '
-                 f'score delta {best_score - score:.4f}')
-        best_score = score
-        global_tries += tries
-
-    global_elapsed = time.time() - global_start
-    log.info(f'Total shapes drawned {global_tries}, time {global_elapsed:.2f} s, '
-             f'({global_tries / global_elapsed:.1f} shapes/s)')
+    elapsed = time.time() - start
+    shapes_drawn = ARGS.n * NUM_IMPROVEMENTS * NUM_SOLUTIONS
+    log.info(f'Total shapes drawn {shapes_drawn}, time {elapsed:.2f} s, '
+             f'({shapes_drawn / elapsed:.1f} shapes/s)')
 
     if ARGS.output is not None:
         canvas.save(ARGS.output)
@@ -57,14 +53,6 @@ def main():
 
 def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
-
-
-def random_shape(w, h, alpha):
-    return {
-        0: Triangle.random,
-        1: Rectangle.random,
-        2: Ellipse.random
-    }[np.random.randint(3)](w=w, h=h, alpha=alpha)
 
 
 if __name__ == '__main__':
