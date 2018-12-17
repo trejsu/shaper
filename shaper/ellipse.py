@@ -9,8 +9,8 @@ from .shape import Shape
 class Ellipse(Shape):
 
     def __init__(self, a, b, h, k, r, alpha):
-        self.a = int(a)
-        self.b = int(b)
+        self.a = max(1, int(a))
+        self.b = max(1, int(b))
         self.h = int(h)
         self.k = int(k)
         self.r = r
@@ -44,10 +44,9 @@ class Ellipse(Shape):
 
     def __str__(self):
         return f'Ellipse: a = {self.a}, b = {self.b}, cx = {self.h}, cy = {self.k}, ' \
-               f'rotation = {self.r}'
+            f'rotation = {self.r}'
 
 
-# todo: find bug with eigvalues
 @njit("i8[:,:](f8, f8, f8, f8, f8)")
 def rasterize_ellipse(a, b, h, k, r):
     b_b = b * b

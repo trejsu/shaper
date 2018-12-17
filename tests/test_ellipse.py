@@ -1,6 +1,7 @@
 import numpy as np
+import pytest
 
-from shaper.ellipse import rasterize_ellipse
+from shaper.ellipse import rasterize_ellipse, Ellipse
 
 
 def test_bounds_for_ellipse_should_have_proper_limits():
@@ -17,3 +18,21 @@ def test_bounds_for_ellipse_should_be_properly_calculated():
          [0, 5, 8], [1, 4, 9]])
     bounds = rasterize_ellipse(a=5, b=3, h=2, k=5, r=2)
     assert np.array_equal(bounds, expected_bounds)
+
+
+@pytest.mark.parametrize("a, b", [
+    (-432532, 43),
+    (32, -342),
+    (32, 54),
+    (-5423542, -432),
+    (0, 43),
+    (32, 0),
+    (0, 0),
+    (0.5423, 43),
+    (32, 0.7562),
+    (0, 0.99999),
+])
+def test_from_params_should_not_produce_ellipse_with_a_and_b_less_than_1(a, b):
+    e = Ellipse.from_params(a, b, 1, 2, 3, 4)
+    assert e.a > 0
+    assert e.b > 0
