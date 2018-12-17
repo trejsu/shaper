@@ -70,7 +70,6 @@ def rasterize_rectangle(points):
     left = np.argmin(points[:, 0])
     right = 6 - (upper + lower + left)
 
-    # todo: why +1 breaks things?
     bounds = np.empty((points[lower][1] - points[upper][1], 3), dtype=np.int64)
 
     i = 0

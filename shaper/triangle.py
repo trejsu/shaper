@@ -48,7 +48,6 @@ def rasterize_triangle(points):
     lower_point = points[lower]
     third_point = points[3 - (upper + lower)]
 
-    # todo: why +1 breaks things?
     bounds = np.empty((lower_point[1] - upper_point[1], 3), dtype=np.int64)
 
     i = 0
