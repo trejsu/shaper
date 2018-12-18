@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.rectangle import Rectangle
+from shaper.shape.rectangle import Rectangle
 from shaper.shape import crop_bounds
 
 

@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numba import njit
 
-from .shape import Shape
+from shaper.shape.shape import Shape
 
 
 class Ellipse(Shape):

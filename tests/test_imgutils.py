@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from shaper.imgutils import resize, mse_full, mse_partial, update_mse
-from shaper.rectangle import Rectangle
+from shaper.shape.rectangle import Rectangle
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -89,8 +89,6 @@ def test_mse_partial_should_return_float_array():
     assert mse.dtype == np.float
 
 
-# todo: test avg_color when shape is straight line of 1px width
-
 def test_update_mse():
     mse = np.zeros((100, 100, 3))
     bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
@@ -124,7 +122,6 @@ def test_update_mse_should_have_the_same_effect_as_full_mse():
     assert np.array_equal(mse, mse_full(target, img))
 
 
-# todo: move to canvas tests and rename
 @pytest.mark.parametrize("x1, y1, x2, y2, x3, y3, x4, y4", [
     (244, 93, 509, 125, 449, 628, 184, 596),
     (140, -237, 421, 76, 47, 409, -233, 95),

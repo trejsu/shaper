@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numba import njit
 
-from .shape import Shape, f
+from shaper.shape.shape import Shape, f
 
 
 class Rectangle(Shape):

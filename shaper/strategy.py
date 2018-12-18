@@ -2,9 +2,9 @@ from abc import abstractmethod
 
 import numpy as np
 
-from .ellipse import Ellipse
-from .rectangle import Rectangle
-from .triangle import Triangle
+from shaper.shape.ellipse import Ellipse
+from shaper.shape.rectangle import Rectangle
+from shaper.shape.triangle import Triangle
 
 
 class Strategy(object):
