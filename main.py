@@ -3,7 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.strategy import SimpleEvolutionStrategy
+from shaper.strategy import RandomStrategy, EvolutionStrategy
 
 ARGS = None
 
@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 # todo: move to some config
+NUM_RANDOM = 100
 NUM_SOLUTIONS = 100
 NUM_IMPROVEMENTS = 10
 
@@ -24,27 +25,32 @@ def main():
     start = time.time()
 
     for i in range(1, ARGS.n + 1):
-        strategy = SimpleEvolutionStrategy(NUM_SOLUTIONS, *canvas.size(), alpha=ARGS.alpha)
-        best_score = 9223372036854775807
-        best_shape = None
+
+        random = RandomStrategy(NUM_RANDOM, *canvas.size(), alpha=ARGS.alpha)
+        shapes = random.ask()
+        scores = [canvas.evaluate(shape) for shape in shapes]
+        random.tell(scores)
+        best_shape, best_score = random.result()
+
+        es = EvolutionStrategy(best_shape, *canvas.size(), alpha=ARGS.alpha, n=NUM_SOLUTIONS)
 
         for j in range(1, NUM_IMPROVEMENTS + 1):
-            shapes = strategy.ask()
+            shapes = es.ask()
             scores = [canvas.evaluate(shape) for shape in shapes]
-            strategy.tell(scores)
-            shape, score = strategy.result()
+            es.tell(scores)
+            shape, score = es.result()
 
             if score < best_score:
                 best_score = score
                 best_shape = shape
 
-        log.info(f'Best shape: {best_shape}')
+        log.debug(f'Best shape: {best_shape}')
         score = canvas.add(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
         show()
 
     elapsed = time.time() - start
-    shapes_drawn = ARGS.n * NUM_IMPROVEMENTS * NUM_SOLUTIONS
+    shapes_drawn = ARGS.n * (NUM_IMPROVEMENTS * NUM_SOLUTIONS + NUM_RANDOM)
     log.info(f'Total shapes drawn {shapes_drawn}, time {elapsed:.2f} s, '
              f'({shapes_drawn / elapsed:.1f} shapes/s)')
 

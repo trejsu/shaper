@@ -30,6 +30,13 @@ class Strategy(object):
             3: Curve.random
         }[np.random.randint(4)](w=self.w, h=self.h, alpha=self.alpha)
 
+    @staticmethod
+    def _shape_class(shape):
+        classes = [Triangle, Rectangle, Ellipse, Curve]
+        for cls in classes:
+            if isinstance(shape, cls):
+                return cls
+
 
 class RandomStrategy(Strategy):
 
@@ -91,9 +98,42 @@ class SimpleEvolutionStrategy(Strategy):
     def result(self):
         return self.shapes[self.best], self.scores[self.best]
 
-    @staticmethod
-    def _shape_class(shape):
-        classes = [Triangle, Rectangle, Ellipse, Curve]
-        for cls in classes:
-            if isinstance(shape, cls):
-                return cls
+
+# todo: find why it stops
+# todo: find good hyperparameters
+class EvolutionStrategy(Strategy):
+
+    def __init__(self, initial_shape, w, h, alpha, n=100, lr=0.1, noise_sigma=0.1,
+        shape_sigma_factor=0.03):
+        self.w = w
+        self.h = h
+        self.alpha = alpha
+        self.n = n
+        self.lr = lr
+        self.noise_sigma = noise_sigma
+        self.mean = np.array(initial_shape.args(), dtype=np.float64).reshape(1, -1)
+        self.shape_sigma = shape_sigma_factor * initial_shape.args_intervals()(w=self.w, h=self.h)
+        self.shape = Strategy._shape_class(initial_shape)
+        self.shapes = None
+        self.scores = None
+        self.eps = None
+        self.best = None
+
+    def ask(self):
+        self.eps = np.random.normal(loc=0, scale=1, size=(self.n, 1))
+        shapes = []
+        for _ in range(self.n):
+            args = [np.random.normal(loc=mean + self.noise_sigma * eps, scale=sigma) for
+                    mean, sigma, eps in zip(self.mean[0], self.shape_sigma, self.eps[:, 0])]
+            shapes.append(self.shape.from_params(*args, self.alpha))
+        self.shapes = shapes
+        return self.shapes
+
+    def tell(self, scores):
+        self.scores = scores
+        self.best = np.argmin(self.scores)
+        self.mean += self.lr / (self.n * self.noise_sigma) * np.dot(
+            np.array(self.scores).reshape(1, -1), self.eps)
+
+    def result(self):
+        return self.shapes[self.best], self.scores[self.best]
