@@ -2,6 +2,7 @@ from abc import abstractmethod
 
 import numpy as np
 
+from shaper.shape.curve import Curve
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.rectangle import Rectangle
 from shaper.shape.triangle import Triangle
@@ -25,8 +26,9 @@ class Strategy(object):
         return {
             0: Triangle.random,
             1: Rectangle.random,
-            2: Ellipse.random
-        }[np.random.randint(3)](w=self.w, h=self.h, alpha=self.alpha)
+            2: Ellipse.random,
+            3: Curve.random
+        }[np.random.randint(4)](w=self.w, h=self.h, alpha=self.alpha)
 
 
 class RandomStrategy(Strategy):
@@ -91,7 +93,7 @@ class SimpleEvolutionStrategy(Strategy):
 
     @staticmethod
     def _shape_class(shape):
-        classes = [Triangle, Rectangle, Ellipse]
+        classes = [Triangle, Rectangle, Ellipse, Curve]
         for cls in classes:
             if isinstance(shape, cls):
                 return cls

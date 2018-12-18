@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.shape import Shape
+from shaper.shape.shape import Shape
 from shaper.strategy import RandomStrategy
 
 

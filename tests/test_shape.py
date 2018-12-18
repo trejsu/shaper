@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from shaper.shape.rectangle import Rectangle
-from shaper.shape import crop_bounds
+from shaper.shape.shape import crop_bounds
 
 
 def test_should_leave_bounds_unchanged_if_no_need_to_crop():

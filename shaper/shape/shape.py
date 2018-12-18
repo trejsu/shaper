@@ -53,7 +53,7 @@ def render(img, bounds, color, alpha):
     a_b = b * alpha
 
     for i in range(len(bounds)):
-        for x in range(bounds[i, 0], bounds[i, 1] + 1, 1 if bounds[i, 0] < bounds[i, 1] else -1):
+        for x in range(min(bounds[i, 0], bounds[i, 1]), max(bounds[i, 0], bounds[i, 1]) + 1):
             img[bounds[i, 2], x, 0] = img[bounds[i, 2], x, 0] * a_current + a_r
             img[bounds[i, 2], x, 1] = img[bounds[i, 2], x, 1] * a_current + a_g
             img[bounds[i, 2], x, 2] = img[bounds[i, 2], x, 2] * a_current + a_b
@@ -64,7 +64,7 @@ def average_color(img, bounds):
     r, g, b, pixels = 0, 0, 0, 1e-10
 
     for i in range(len(bounds)):
-        for x in range(bounds[i, 0], bounds[i, 1] + 1, 1 if bounds[i, 0] < bounds[i, 1] else -1):
+        for x in range(min(bounds[i, 0], bounds[i, 1]), max(bounds[i, 0], bounds[i, 1]) + 1):
             r += img[bounds[i, 2], x, 0]
             g += img[bounds[i, 2], x, 1]
             b += img[bounds[i, 2], x, 2]
