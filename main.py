@@ -3,59 +3,86 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.strategy import RandomStrategy, EvolutionStrategy
+from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 
 ARGS = None
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# todo: move to some config
-NUM_RANDOM = 100
-NUM_SOLUTIONS = 100
-NUM_IMPROVEMENTS = 10
-
 
 def main():
-    canvas = Canvas(ARGS.input)
-    show = show_function(canvas)
-    score = canvas.init()
-    log.info(f'Initial score: {score}')
-
+    canvas, show = init()
     start = time.time()
 
     for i in range(1, ARGS.n + 1):
+        best_score, best_shape = find_best_random_shape(canvas)
+        strategy = pick_strategy(best_shape, canvas)
 
-        random = RandomStrategy(NUM_RANDOM, *canvas.size(), alpha=ARGS.alpha)
-        shapes = random.ask()
-        scores = [canvas.evaluate(shape) for shape in shapes]
-        random.tell(scores)
-        best_shape, best_score = random.result()
-
-        es = EvolutionStrategy(best_shape, *canvas.size(), alpha=ARGS.alpha, n=NUM_SOLUTIONS)
-
-        for j in range(1, NUM_IMPROVEMENTS + 1):
-            shapes = es.ask()
-            scores = [canvas.evaluate(shape) for shape in shapes]
-            es.tell(scores)
-            shape, score = es.result()
+        for j in range(1, ARGS.step + 1):
+            score, shape = find_best_shape(canvas, strategy)
 
             if score < best_score:
                 best_score = score
                 best_shape = shape
 
-        log.debug(f'Best shape: {best_shape}')
         score = canvas.add(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
         show()
 
     elapsed = time.time() - start
-    shapes_drawn = ARGS.n * (NUM_IMPROVEMENTS * NUM_SOLUTIONS + NUM_RANDOM)
+    shapes_drawn = ARGS.n * (ARGS.step * ARGS.sample + ARGS.random)
     log.info(f'Total shapes drawn {shapes_drawn}, time {elapsed:.2f} s, '
              f'({shapes_drawn / elapsed:.1f} shapes/s)')
 
     if ARGS.output is not None:
         canvas.save(ARGS.output)
+
+
+def find_best_shape(canvas, strategy):
+    shapes = strategy.ask()
+    scores = [canvas.evaluate(shape) for shape in shapes]
+    strategy.tell(scores)
+    shape, score = strategy.result()
+    return score, shape
+
+
+def init():
+    canvas = Canvas(ARGS.input)
+    show = show_function(canvas)
+    score = canvas.init()
+    log.info(f'Initial score: {score}')
+    return canvas, show
+
+
+def pick_strategy(best_shape, canvas):
+    if ARGS.algorithm == 'es':
+        strategy = EvolutionStrategy(
+            best_shape,
+            *canvas.size(),
+            alpha=ARGS.alpha,
+            n=ARGS.sample,
+            lr=ARGS.learning_rate,
+            sigma_factor=ARGS.sigma_factor,
+        )
+    else:
+        strategy = SimpleEvolutionStrategy(
+            best_shape,
+            *canvas.size(),
+            alpha=ARGS.alpha,
+            n=ARGS.sample,
+            sigma_factor=ARGS.sigma_factor,
+        )
+    return strategy
+
+
+def find_best_random_shape(canvas):
+    random = RandomStrategy(ARGS.random, *canvas.size(), alpha=ARGS.alpha)
+    shapes = random.ask()
+    scores = [canvas.evaluate(shape) for shape in shapes]
+    random.tell(scores)
+    best_shape, best_score = random.result()
+    return best_score, best_shape
 
 
 def show_function(canvas):
@@ -71,5 +98,11 @@ if __name__ == '__main__':
                         help='Render mode: 0 - click, 1 - automatic, 2 - no render',
                         choices=[0, 1, 2], default=2)
     parser.add_argument('--alpha', type=float, help="Alpha value [0, 1]", default=0.5)
+    parser.add_argument('--random', type=int, default=100)
+    parser.add_argument('--sample', type=int, default=100)
+    parser.add_argument('--step', type=int, default=10)
+    parser.add_argument('--learning-rate', type=float, default=1)
+    parser.add_argument('--sigma-factor', type=float, default=0.03)
+    parser.add_argument('--algorithm', type=str, choices=['simple', 'es'], default='es')
     ARGS = parser.parse_args()
     main()
