@@ -32,7 +32,7 @@ class Triangle(Shape):
         return self.alpha
 
     def args(self):
-        return self.points.reshape(-1, )
+        return self.points.reshape(-1, ).astype(np.float64)
 
     @staticmethod
     def args_intervals():

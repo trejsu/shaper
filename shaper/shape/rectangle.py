@@ -14,7 +14,7 @@ class Rectangle(Shape):
 
     def __str__(self):
         return f'Rectangle: A = {self.points[0]}, B = {self.points[1]}, ' \
-               f'C = {self.points[2]}, D = {self.points[3]}'
+            f'C = {self.points[2]}, D = {self.points[3]}'
 
     @staticmethod
     def random(w, h, alpha):
@@ -56,7 +56,7 @@ class Rectangle(Shape):
         return self.alpha
 
     def args(self):
-        return self.points.reshape(-1, )
+        return self.points.reshape(-1, ).astype(np.float64)
 
     @staticmethod
     def args_intervals():

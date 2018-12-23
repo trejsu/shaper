@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
+from shaper.shape.curve import Curve
+from shaper.shape.triangle import Triangle
 from shaper.shape.rectangle import Rectangle
+from shaper.shape.ellipse import Ellipse
+from shaper.shape.shape import Shape
 from shaper.shape.shape import crop_bounds
 
 
@@ -70,3 +74,9 @@ def test_opposite_rectangle_points_should_sum_up():
     bdy = r.points[1][1] + r.points[3][1]
     acy = r.points[0][1] + r.points[2][1]
     assert bdy - 1 <= acy <= bdy + 1
+
+
+def test_args_method_should_return_float_array():
+    for shape in Shape.__subclasses__():
+        args = shape.random(100, 100, 1).args()
+        assert args.dtype == np.float64, f'Tested shape: {shape}, actual type: {args.dtype}'

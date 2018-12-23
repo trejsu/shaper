@@ -65,7 +65,7 @@ class RandomStrategy(Strategy):
 
 class SimpleEvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor=.03):
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor):
         self.n = n
         self.w = w
         self.h = h
@@ -97,16 +97,15 @@ class SimpleEvolutionStrategy(Strategy):
 
 class EvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, lr, sigma_factor):
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer):
         self.w = w
         self.h = h
         self.alpha = alpha
         self.n = n
-        self.lr = lr
 
-        self.theta = np.array(initial_shape.args(), dtype=np.float64)
         self.sigma = sigma_factor * initial_shape.args_intervals()(w=self.w, h=self.h)
         self.shape = Strategy._shape_class(initial_shape)
+        self.optimizer = optimizer
 
         self.shapes = None
         self.scores = None
@@ -114,11 +113,11 @@ class EvolutionStrategy(Strategy):
         self.best = None
 
     def ask(self):
-        self.eps = np.random.normal(loc=0, scale=1, size=(self.n, len(self.theta)))
+        self.eps = np.random.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
         for i in range(self.n):
             args = [theta + sigma * eps for theta, sigma, eps in
-                    zip(self.theta, self.sigma, self.eps[i])]
+                    zip(self.optimizer.get_params(), self.sigma, self.eps[i])]
             shape = self.shape.from_params(*args, self.alpha)
             shapes.append(shape)
         self.shapes = shapes
@@ -126,10 +125,10 @@ class EvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        normalized_scores = -((np.array(scores) - np.mean(scores)) / np.std(scores))
+        normalized_scores = (np.array(scores) - np.mean(scores)) / np.std(scores)
         self.best = np.argmin(self.scores)
-        update = self.lr / (self.n * self.sigma) * np.dot(normalized_scores.T, self.eps)
-        self.theta += update
+        gradient = np.dot(normalized_scores.T, self.eps) / (self.n * self.sigma)
+        self.optimizer.step(gradient)
 
     def result(self):
         return self.shapes[self.best], self.scores[self.best]

@@ -3,6 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
+from shaper.optimizer import GradientDescent
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 
 ARGS = None
@@ -17,10 +18,23 @@ def main():
 
     for i in range(1, ARGS.n + 1):
         best_score, best_shape = find_best_random_shape(canvas)
+
+        # todo: remove
+        log.info(f'Best random shape: {best_shape}')
+        canvas.add(best_shape)
+        show()
+        canvas.undo()
+
         strategy = pick_strategy(best_shape, canvas)
 
         for j in range(1, ARGS.step + 1):
             score, shape = find_best_shape(canvas, strategy)
+
+            # # todo: remove
+            # log.info(f'Shape after {j} step: {shape}')
+            # canvas.add(shape)
+            # show()
+            # canvas.undo()
 
             if score < best_score:
                 best_score = score
@@ -62,8 +76,11 @@ def pick_strategy(best_shape, canvas):
             *canvas.size(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
-            lr=ARGS.learning_rate,
             sigma_factor=ARGS.sigma_factor,
+            optimizer=GradientDescent(
+                initial_params=best_shape.args(),
+                learning_rate=ARGS.learning_rate
+            )
         )
     else:
         strategy = SimpleEvolutionStrategy(

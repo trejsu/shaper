@@ -36,7 +36,7 @@ class Ellipse(Shape):
         return self.alpha
 
     def args(self):
-        return [self.a, self.b, self.h, self.k, self.r]
+        return np.array([self.a, self.b, self.h, self.k, self.r], dtype=np.float64)
 
     @staticmethod
     def args_intervals():
