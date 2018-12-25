@@ -109,9 +109,10 @@ class Adadelta(Optimizer):
         self.d = self.gamma * self.d + (1 - self.gamma) * np.square(self._params - old_params)
 
 
+# todo: add gradient clipping if needed
 class Adam(Optimizer):
 
-    def __init__(self, initial_params, learning_rate, beta1, beta2, epsilon):
+    def __init__(self, initial_params, learning_rate, beta1=.9, beta2=.999, epsilon=1e-8):
         super().__init__(initial_params)
         self.learning_rate = learning_rate
         self.beta1 = beta1

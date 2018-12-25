@@ -3,7 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.optimizer import GradientDescent
+from shaper.optimizer import GradientDescent, Adam
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 
 ARGS = None
@@ -29,12 +29,6 @@ def main():
 
         for j in range(1, ARGS.step + 1):
             score, shape = find_best_shape(canvas, strategy)
-
-            # # todo: remove
-            # log.info(f'Shape after {j} step: {shape}')
-            # canvas.add(shape)
-            # show()
-            # canvas.undo()
 
             if score < best_score:
                 best_score = score
@@ -71,13 +65,18 @@ def init():
 
 def pick_strategy(best_shape, canvas):
     if ARGS.algorithm == 'es':
+        optimizer = {
+            'sgd': GradientDescent,
+            'adam': Adam
+        }[ARGS.optimizer]
+
         strategy = EvolutionStrategy(
             best_shape,
             *canvas.size(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
-            optimizer=GradientDescent(
+            optimizer=optimizer(
                 initial_params=best_shape.args(),
                 learning_rate=ARGS.learning_rate
             )
@@ -116,10 +115,11 @@ if __name__ == '__main__':
                         choices=[0, 1, 2], default=2)
     parser.add_argument('--alpha', type=float, help="Alpha value [0, 1]", default=0.5)
     parser.add_argument('--random', type=int, default=100)
-    parser.add_argument('--sample', type=int, default=100)
-    parser.add_argument('--step', type=int, default=10)
+    parser.add_argument('--sample', type=int, default=10)
+    parser.add_argument('--step', type=int, default=100)
     parser.add_argument('--learning-rate', type=float, default=1)
     parser.add_argument('--sigma-factor', type=float, default=0.03)
     parser.add_argument('--algorithm', type=str, choices=['simple', 'es'], default='es')
+    parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
     ARGS = parser.parse_args()
     main()
