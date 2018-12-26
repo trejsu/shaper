@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from shaper.imgutils import resize, mse_full, mse_partial, update_mse
 from shaper.shape.rectangle import Rectangle
+from shaper.util import resize, mse_full, mse_partial, update_mse, normalize
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -140,3 +140,15 @@ def test_broken_partial_mse(x1, y1, x2, y2, x3, y3, x4, y4):
     update_mse(mse=mse, bounds=bounds, img=img, target=target)
     assert np.array_equal(mse, mse_full(target, img))
     assert np.average(mse) == np.average(mse_full(target, img))
+
+
+def test_normalize_should_not_return_nans_when_array_has_the_same_elements():
+    arr = np.full(shape=(100,), fill_value=33)
+    normalized = normalize(arr)
+    assert not np.any(np.isnan(normalized))
+
+
+def test_normalize_should_return_the_same_values_when_array_has_the_same_elements():
+    arr = np.full(shape=(100,), fill_value=33)
+    normalized = normalize(arr)
+    assert np.all(normalized[0] == normalized)

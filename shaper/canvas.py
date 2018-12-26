@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.imgutils import mse_full, average_color, update_mse
+from shaper.util import mse_full, average_color, update_mse
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt

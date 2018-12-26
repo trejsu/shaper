@@ -7,6 +7,7 @@ from shaper.shape.curve import Curve
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.rectangle import Rectangle
 from shaper.shape.triangle import Triangle
+from shaper.util import normalize
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class EvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        normalized_scores = (np.array(scores) - np.mean(scores)) / np.std(scores)
+        normalized_scores = normalize(scores)
         self.best = np.argmin(self.scores)
         gradient = np.dot(normalized_scores.T, self.eps) / (self.n * self.sigma)
         self.optimizer.step(gradient)

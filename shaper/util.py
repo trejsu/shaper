@@ -29,3 +29,10 @@ def update_mse(mse, bounds, img, target):
         y = bounds[i, 2]
         mse[y, min(x1, x2): max(x1, x2) + 1] = np.square(
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
+
+
+def normalize(arr):
+    arr_minus_mean = np.array(arr) - np.mean(arr)
+    if np.all(arr_minus_mean == 0):
+        return np.zeros(arr_minus_mean.shape)
+    return arr_minus_mean / np.std(arr)
