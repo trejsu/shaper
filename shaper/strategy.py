@@ -51,7 +51,7 @@ class Strategy(object):
 
 class RandomStrategy(Strategy):
 
-    def __init__(self, num_shapes, w, h, alpha, shape_mode):
+    def __init__(self, num_shapes, w, h, alpha, shape_mode=0):
         super().__init__(w, h, alpha, shape_mode)
         self.num_shapes = num_shapes
         self.shapes = None
@@ -71,7 +71,7 @@ class RandomStrategy(Strategy):
 
 class SimpleEvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, shape_mode):
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, shape_mode=0):
         super().__init__(w, h, alpha, shape_mode)
         self.n = n
         self.shape = Strategy._shape_class(initial_shape)
@@ -101,7 +101,7 @@ class SimpleEvolutionStrategy(Strategy):
 
 class EvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer, shape_mode):
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer, shape_mode=0):
         super().__init__(w, h, alpha, shape_mode)
         self.n = n
 
