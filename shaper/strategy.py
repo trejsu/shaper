@@ -14,6 +14,12 @@ log = logging.getLogger(__name__)
 
 class Strategy(object):
 
+    def __init__(self, w, h, alpha, shape_mode):
+        self.w = w
+        self.h = h
+        self.alpha = alpha
+        self.shape_mode = shape_mode
+
     @abstractmethod
     def ask(self):
         raise NotImplementedError
@@ -27,12 +33,13 @@ class Strategy(object):
         raise NotImplementedError
 
     def _random_shape(self):
+        shape = np.random.randint(4) if self.shape_mode == 0 else self.shape_mode - 1
         return {
             0: Triangle.random,
             1: Rectangle.random,
             2: Ellipse.random,
             3: Curve.random
-        }[np.random.randint(4)](w=self.w, h=self.h, alpha=self.alpha)
+        }[shape](w=self.w, h=self.h, alpha=self.alpha)
 
     @staticmethod
     def _shape_class(shape):
@@ -44,11 +51,9 @@ class Strategy(object):
 
 class RandomStrategy(Strategy):
 
-    def __init__(self, num_shapes, w, h, alpha):
+    def __init__(self, num_shapes, w, h, alpha, shape_mode):
+        super().__init__(w, h, alpha, shape_mode)
         self.num_shapes = num_shapes
-        self.w = w
-        self.h = h
-        self.alpha = alpha
         self.shapes = None
         self.scores = None
 
@@ -66,11 +71,9 @@ class RandomStrategy(Strategy):
 
 class SimpleEvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor):
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, shape_mode):
+        super().__init__(w, h, alpha, shape_mode)
         self.n = n
-        self.w = w
-        self.h = h
-        self.alpha = alpha
         self.shape = Strategy._shape_class(initial_shape)
         self.mean = np.array(initial_shape.args(), dtype=np.float64)
         self.sigma = sigma_factor * self.shape.args_intervals()(w=self.w, h=self.h)
@@ -98,10 +101,8 @@ class SimpleEvolutionStrategy(Strategy):
 
 class EvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer):
-        self.w = w
-        self.h = h
-        self.alpha = alpha
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer, shape_mode):
+        super().__init__(w, h, alpha, shape_mode)
         self.n = n
 
         self.sigma = sigma_factor * initial_shape.args_intervals()(w=self.w, h=self.h)

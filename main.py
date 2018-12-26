@@ -19,12 +19,6 @@ def main():
     for i in range(1, ARGS.n + 1):
         best_score, best_shape = find_best_random_shape(canvas)
 
-        # todo: remove
-        log.info(f'Best random shape: {best_shape}')
-        canvas.add(best_shape)
-        show()
-        canvas.undo()
-
         strategy = pick_strategy(best_shape, canvas)
 
         for j in range(1, ARGS.step + 1):
@@ -79,7 +73,8 @@ def pick_strategy(best_shape, canvas):
             optimizer=optimizer(
                 initial_params=best_shape.args(),
                 learning_rate=ARGS.learning_rate
-            )
+            ),
+            shape_mode=ARGS.shape_mode
         )
     else:
         strategy = SimpleEvolutionStrategy(
@@ -88,12 +83,18 @@ def pick_strategy(best_shape, canvas):
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
+            shape_mode=ARGS.shape_mode
         )
     return strategy
 
 
 def find_best_random_shape(canvas):
-    random = RandomStrategy(ARGS.random, *canvas.size(), alpha=ARGS.alpha)
+    random = RandomStrategy(
+        ARGS.random,
+        *canvas.size(),
+        alpha=ARGS.alpha,
+        shape_mode=ARGS.shape_mode
+    )
     shapes = random.ask()
     scores = [canvas.evaluate(shape) for shape in shapes]
     random.tell(scores)
@@ -121,5 +122,8 @@ if __name__ == '__main__':
     parser.add_argument('--sigma-factor', type=float, default=0.03)
     parser.add_argument('--algorithm', type=str, choices=['simple', 'es'], default='es')
     parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
+    parser.add_argument('--shape-mode', type=int,
+                        help='Shape mode: 0 - all, 1 - triangle, 2 - rectangle, 3 - ellipse, '
+                             '4 - curve', choices=[0, 1, 2, 3, 4], default=0)
     ARGS = parser.parse_args()
     main()

@@ -1,6 +1,6 @@
 # shaper
 
-![](./data/flower/flower-1000-all.jpg)
+![](./data/tree/tree-500-adam.jpg)
 
 ## Usage
 
