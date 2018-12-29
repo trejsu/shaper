@@ -3,7 +3,7 @@ import logging
 import time
 
 from shaper.canvas import Canvas
-from shaper.optimizer import GradientDescent, Adam
+from shaper.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 
 ARGS = None
@@ -58,9 +58,14 @@ def init():
 
 
 def pick_strategy(best_shape, canvas):
-    if ARGS.algorithm == 'es':
+    if ARGS.algorithm == 'natural':
         optimizer = {
             'sgd': GradientDescent,
+            'momentum': Momentum,
+            'nesterov': Nesterov,
+            'adagrad': Adagrad,
+            'rmsprop': RMSProp,
+            'adadelta': Adadelta,
             'adam': Adam
         }[ARGS.optimizer]
 
@@ -76,7 +81,7 @@ def pick_strategy(best_shape, canvas):
             ),
             shape_mode=ARGS.shape_mode
         )
-    else:
+    elif ARGS.algorithm == 'simple':
         strategy = SimpleEvolutionStrategy(
             best_shape,
             *canvas.size(),
@@ -84,6 +89,12 @@ def pick_strategy(best_shape, canvas):
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
             shape_mode=ARGS.shape_mode
+        )
+    else:
+        strategy = RandomStrategy(
+            ARGS.sample,
+            *canvas.size(),
+            alpha=ARGS.alpha
         )
     return strategy
 
@@ -120,8 +131,11 @@ if __name__ == '__main__':
     parser.add_argument('--step', type=int, default=50)
     parser.add_argument('--learning-rate', type=float, default=1)
     parser.add_argument('--sigma-factor', type=float, default=0.03)
-    parser.add_argument('--algorithm', type=str, choices=['simple', 'es'], default='es')
-    parser.add_argument('--optimizer', type=str, choices=['sgd', 'adam'], default='adam')
+    parser.add_argument('--algorithm', type=str, choices=['random', 'simple', 'natural'],
+                        default='natural')
+    parser.add_argument('--optimizer', type=str,
+                        choices=['sgd', 'momentum', 'nesterov', 'adagrad', 'rmsprop', 'adadelta',
+                                 'adam'], default='adam')
     parser.add_argument('--shape-mode', type=int,
                         help='Shape mode: 0 - all, 1 - triangle, 2 - rectangle, 3 - ellipse, '
                              '4 - curve', choices=[0, 1, 2, 3, 4], default=0)

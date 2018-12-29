@@ -28,7 +28,7 @@ class GradientDescent(Optimizer):
 
 class Momentum(Optimizer):
 
-    def __init__(self, initial_params, learning_rate, gamma):
+    def __init__(self, initial_params, learning_rate, gamma=.9):
         super().__init__(initial_params)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -41,7 +41,7 @@ class Momentum(Optimizer):
 
 class Nesterov(Optimizer):
 
-    def __init__(self, initial_params, learning_rate, gamma):
+    def __init__(self, initial_params, learning_rate, gamma=.9):
         super().__init__(initial_params)
         self.training_phase = True
         self.learning_rate = learning_rate
@@ -67,7 +67,7 @@ class Nesterov(Optimizer):
 
 class Adagrad(Optimizer):
 
-    def __init__(self, initial_params, learning_rate, epsilon):
+    def __init__(self, initial_params, learning_rate, epsilon=1e-8):
         super().__init__(initial_params)
         self.learning_rate = learning_rate
         self.epsilon = epsilon
@@ -80,7 +80,7 @@ class Adagrad(Optimizer):
 
 class RMSProp(Optimizer):
 
-    def __init__(self, initial_params, learning_rate, gamma, epsilon):
+    def __init__(self, initial_params, learning_rate, gamma=.9, epsilon=1e-8):
         super().__init__(initial_params)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -94,7 +94,7 @@ class RMSProp(Optimizer):
 
 class Adadelta(Optimizer):
 
-    def __init__(self, initial_params, gamma, epsilon):
+    def __init__(self, initial_params, learning_rate, gamma=.95, epsilon=1e-4):
         super().__init__(initial_params)
         self.gamma = gamma
         self.epsilon = epsilon
