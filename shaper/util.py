@@ -38,3 +38,21 @@ def normalize(arr):
     if np.all(arr_minus_mean == 0):
         return np.zeros(arr_minus_mean.shape)
     return arr_minus_mean / np.std(arr)
+
+
+@njit("i8[:,:](i8[:,:])")
+def bounds_to_pixels(bounds):
+    n = 0
+    for i in range(len(bounds)):
+        n += abs(bounds[i][0] - bounds[i][1]) + 1
+
+    pixels = np.empty(shape=(n, 2), dtype=np.int64)
+
+    j = 0
+    for i in range(len(bounds)):
+        for x in range(min(bounds[i, 0], bounds[i, 1]), max(bounds[i, 0], bounds[i, 1]) + 1):
+            pixels[j, 0] = x
+            pixels[j, 1] = bounds[i, 2]
+            j += 1
+
+    return pixels

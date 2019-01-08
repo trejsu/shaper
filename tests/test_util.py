@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from shaper.shape.rectangle import Rectangle
-from shaper.util import resize, mse_full, mse_partial, update_mse, normalize
+from shaper.util import resize, mse_full, mse_partial, update_mse, normalize, bounds_to_pixels
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -152,3 +152,27 @@ def test_normalize_should_return_the_same_values_when_array_has_the_same_element
     arr = np.full(shape=(100,), fill_value=33)
     normalized = normalize(arr)
     assert np.all(normalized[0] == normalized)
+
+
+def test_bounds_to_pixels():
+    bounds = np.array([[3, 10, 10], [3, 11, 11], [4, 12, 12]])
+    expected_pixels = np.array(
+        [[3, 10], [4, 10], [5, 10], [6, 10], [7, 10], [8, 10], [9, 10], [10, 10],
+         [3, 11], [4, 11], [5, 11], [6, 11], [7, 11], [8, 11], [9, 11], [10, 11],
+         [11, 11], [4, 12], [5, 12], [6, 12], [7, 12], [8, 12], [9, 12], [10, 12],
+         [11, 12], [12, 12]]
+    )
+    pixels = bounds_to_pixels(bounds)
+    assert np.array_equal(pixels, expected_pixels)
+
+
+def test_bounds_to_pixels_start_x_bigger_than_end_x():
+    bounds = np.array([[10, 3, 10], [11, 3, 11], [12, 4, 12]])
+    expected_pixels = np.array(
+        [[3, 10], [4, 10], [5, 10], [6, 10], [7, 10], [8, 10], [9, 10], [10, 10],
+         [3, 11], [4, 11], [5, 11], [6, 11], [7, 11], [8, 11], [9, 11], [10, 11],
+         [11, 11], [4, 12], [5, 12], [6, 12], [7, 12], [8, 12], [9, 12], [10, 12],
+         [11, 12], [12, 12]]
+    )
+    pixels = bounds_to_pixels(bounds)
+    assert np.array_equal(pixels, expected_pixels)
