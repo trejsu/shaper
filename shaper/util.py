@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 from numba import njit
 
-MIN_Y = -9999999999999
+MIN_VALUE = -9999999999999
 
 
 def resize(img, w, h):

@@ -1,19 +1,20 @@
 import numpy as np
 from numba import njit
 
-from shaper.util import MIN_Y
+from shaper.util import MIN_VALUE
 from .shape import Shape
 
 
-# todo: add size
 class Curve(Shape):
 
     def __init__(self, points, alpha):
         self.points = points.astype(np.int64)
         self.alpha = alpha
+        self.extremum = None
+        self.num_bounds = None
 
     def __str__(self):
-        return f'Curve: P0 = {self.points[0]}, P1 = {self.points[1]}, P2 = {self.points[2]}'
+        return f'Curve(P0={self.points[0]}, P1={self.points[1]}, P2={self.points[2]})'
 
     @staticmethod
     def random(w, h, alpha):
@@ -26,8 +27,10 @@ class Curve(Shape):
     def from_params(*params):
         return Curve(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
-    def get_bounds(self):
-        return rasterize_curve(self.points, 0)
+    def get_bounds(self, h=None, w=None):
+        bounds, self.extremum = rasterize_curve(self.points, 0)
+        self.num_bounds = bounds.shape[0]
+        return bounds
 
     def get_alpha(self):
         return self.alpha
@@ -39,48 +42,10 @@ class Curve(Shape):
     def args_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
 
-
-# todo: remove after adding random ellipses
-class TripleCurve(Shape):
-
-    def __init__(self, points, alpha):
-        self.points = points.astype(np.int64)
-        self.alpha = alpha
-        self.size = np.random.randint(8)
-
-    @staticmethod
-    def random(w, h, alpha):
-        xs = np.random.randint(w, size=(3, 1))
-        ys = np.random.randint(h, size=(3, 1))
-        points = np.concatenate((xs, ys), axis=1)
-        return TripleCurve(points, alpha)
-
-    @staticmethod
-    def from_params(*params):
-        return TripleCurve(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
-
-    def get_bounds(self):
-        bounds = rasterize_curve(self.points, self.size)
-        for i in range(-self.size, self.size + 1):
-            if i == 0:
-                continue
-            else:
-                new_points = np.array([[x, y + i] for x, y in self.points], dtype=np.int64)
-                new_bounds = rasterize_curve(new_points, self.size)
-                bounds = np.concatenate((bounds, new_bounds), axis=0)
-        return bounds
-
-    def get_alpha(self):
-        return self.alpha
-
-    def args(self):
-        reshape = self.points.astype(np.float64).reshape(-1, )
-        print(f'reshaped dtype {reshape.dtype}')
-        return reshape
-
-    @staticmethod
-    def args_intervals():
-        return lambda w, h: np.array([w, h, w, h, w, h])
+    def has_doubled_ys(self):
+        if self.extremum is None:
+            raise Exception('Extremum value is not initialized. Call get_bounds first.')
+        return self.extremum != self.points[0][1] and self.extremum != self.points[2][1]
 
 
 @njit("i8(f8, i8, i8, i8)")
@@ -106,7 +71,7 @@ def extremum(p0, p1, p2):
     return bezier(a / b, p0, p1, p2)
 
 
-@njit("i8[:,:](i8[:,:], i8)")
+@njit("Tuple((i8[:,:], i8))(i8[:,:], i8)")
 def rasterize_curve(points, size):
     x0, y0 = points[0]
     x1, y1 = points[1]
@@ -122,7 +87,7 @@ def rasterize_curve(points, size):
     bounds = np.empty((num_bounds, 3), dtype=np.int64)
 
     i = 0
-    prev_y = MIN_Y
+    prev_y = MIN_VALUE
     for t in ts:
 
         x = bezier(t, x0, x1, x2)
@@ -139,4 +104,4 @@ def rasterize_curve(points, size):
 
         prev_y = y
 
-    return bounds
+    return bounds[0:i], ext

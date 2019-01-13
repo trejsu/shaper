@@ -15,14 +15,16 @@ class Shape(object):
         raise NotImplementedError
 
     def render(self, img, target):
-        bounds = self.get_bounds()
+        bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
         color = average_color(img=target, bounds=bounds)
-        render(img=img, bounds=bounds, color=color, alpha=self.get_alpha())
+        alpha = self.get_alpha()
+        assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
+        render(img=img, bounds=bounds, color=color, alpha=alpha)
         return bounds
 
     @abstractmethod
-    def get_bounds(self):
+    def get_bounds(self, h, w):
         raise NotImplementedError
 
     @abstractmethod

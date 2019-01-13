@@ -29,7 +29,7 @@ class Ellipse(Shape):
     def from_params(*params):
         return Ellipse(*params)
 
-    def get_bounds(self):
+    def get_bounds(self, h=None, w=None):
         return rasterize_ellipse(a=self.a, b=self.b, h=self.h, k=self.k, r=self.r)
 
     def get_alpha(self):
@@ -43,8 +43,7 @@ class Ellipse(Shape):
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 
     def __str__(self):
-        return f'Ellipse: a = {self.a}, b = {self.b}, cx = {self.h}, cy = {self.k}, ' \
-            f'rotation = {self.r}'
+        return f'Ellipse(a={self.a}, b={self.b}, cx={self.h}, cy={self.k}, rotation={self.r})'
 
 
 @njit("i8[:,:](f8, f8, f8, f8, f8)")

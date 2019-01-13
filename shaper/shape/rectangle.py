@@ -13,8 +13,8 @@ class Rectangle(Shape):
         self.alpha = alpha
 
     def __str__(self):
-        return f'Rectangle: A = {self.points[0]}, B = {self.points[1]}, ' \
-            f'C = {self.points[2]}, D = {self.points[3]}'
+        return f'Rectangle(A={self.points[0]}, B={self.points[1]}, C={self.points[2]}, ' \
+            f'D={self.points[3]})'
 
     @staticmethod
     def random(w, h, alpha):
@@ -49,7 +49,7 @@ class Rectangle(Shape):
     def from_params(*params):
         return Rectangle(points=np.array(params[:-1]).reshape(4, 2), alpha=params[-1])
 
-    def get_bounds(self):
+    def get_bounds(self, h=None, w=None):
         return rasterize_rectangle(self.points)
 
     def get_alpha(self):

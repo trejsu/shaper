@@ -11,7 +11,7 @@ class Triangle(Shape):
         self.alpha = alpha
 
     def __str__(self):
-        return f'Triangle: A = {self.points[0]}, B = {self.points[1]}, C = {self.points[2]}'
+        return f'Triangle(A={self.points[0]}, B={self.points[1]}, C={self.points[2]})'
 
     @staticmethod
     def random(w, h, alpha):
@@ -25,7 +25,7 @@ class Triangle(Shape):
     def from_params(*params):
         return Triangle(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
-    def get_bounds(self):
+    def get_bounds(self, h=None, w=None):
         return rasterize_triangle(self.points)
 
     def get_alpha(self):
