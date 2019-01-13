@@ -65,7 +65,12 @@ def find_best_shape(canvas, strategy):
 
 
 def init():
-    canvas = Canvas(ARGS.input)
+    canvas = Canvas(
+        target=ARGS.input,
+        size=ARGS.resize,
+        output_size=ARGS.output_size,
+        num_shapes=ARGS.n
+    )
     show = show_function(canvas)
     score = canvas.init()
     log.info(f'Initial score: {score}')

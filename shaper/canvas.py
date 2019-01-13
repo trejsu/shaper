@@ -13,11 +13,13 @@ log = logging.getLogger(__name__)
 
 
 class Canvas(object):
-    def __init__(self, target, size, output_size):
+    def __init__(self, target, size, output_size, num_shapes):
         self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
         self.output_size = output_size
+        self.shapes = np.empty(shape=(num_shapes, 2))
+        self.current_shape_num = 0
         self.prev_img = None
         self.prev_mse = None
         self.showed = None
@@ -32,9 +34,6 @@ class Canvas(object):
     def show_and_wait(self):
         plt.imshow(self._showable_img())
         plt.waitforbuttonpress()
-
-    def _showable_img(self):
-        return np.concatenate((self.target / 255, self.img / 255), axis=1)
 
     def show(self):
         img = self._showable_img()
@@ -51,6 +50,7 @@ class Canvas(object):
         self.prev_mse = self.mse.copy()
         bounds = shape.render(self.img, self.target)
         update_mse(mse=self.mse, bounds=bounds, img=self.img, target=self.target)
+        self._add_to_list(shape)
         return self._score()
 
     def size(self):
@@ -59,6 +59,7 @@ class Canvas(object):
     def undo(self):
         self.img = self.prev_img
         self.mse = self.prev_mse
+        self.current_shape_num -= 1
 
     # todo: save in requested output size
     def save(self, output):
@@ -71,3 +72,13 @@ class Canvas(object):
 
     def _score(self):
         return np.average(self.mse)
+
+    def _add_to_list(self, shape):
+        self.shapes[self.current_shape_num] = [
+            shape.__class__,
+            shape.normalized_params(*self.size())
+        ]
+        self.current_shape_num += 1
+
+    def _showable_img(self):
+        return np.concatenate((self.target / 255, self.img / 255), axis=1)
