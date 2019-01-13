@@ -26,6 +26,14 @@ class Brush(Shape):
     def from_params(cls, *params):
         return cls(path=Curve.from_params(*params[:-1]), size=params[-2], alpha=params[-1])
 
+    @classmethod
+    def from_normalized_params(cls, w, h, *params):
+        return cls(
+            path=Curve.from_normalized_params(w, h, *params[:-1]),
+            size=int(params[-2] * min(w, h)),
+            alpha=params[-1]
+        )
+
     def get_bounds(self, h, w):
         centers = self.get_shapes_centers(h, w)
         shapes = [self.get_shape(x=x, y=y, size=self.size) for x, y in centers]

@@ -14,14 +14,10 @@ class Shape(object):
     def from_params(*params):
         raise NotImplementedError
 
-    def render(self, img, target):
-        bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
-        crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
-        color = average_color(img=target, bounds=bounds)
-        alpha = self.get_alpha()
-        assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
-        render(img=img, bounds=bounds, color=color, alpha=alpha)
-        return bounds
+    @staticmethod
+    @abstractmethod
+    def from_normalized_params(w, h, *params):
+        raise NotImplementedError
 
     @abstractmethod
     def get_bounds(self, h, w):
@@ -39,6 +35,15 @@ class Shape(object):
     @abstractmethod
     def args_intervals():
         raise NotImplementedError
+
+    def render(self, img, target):
+        bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
+        crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
+        color = average_color(img=target, bounds=bounds)
+        alpha = self.get_alpha()
+        assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
+        render(img=img, bounds=bounds, color=color, alpha=alpha)
+        return bounds
 
 
 @njit("f8(i8, i8, i8, i8, i8)")

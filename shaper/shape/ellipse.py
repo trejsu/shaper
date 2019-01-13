@@ -29,6 +29,17 @@ class Ellipse(Shape):
     def from_params(*params):
         return Ellipse(*params)
 
+    @staticmethod
+    def from_normalized_params(w, h, *params):
+        return Ellipse(
+            a=int(params[0] * w),
+            b=int(params[1] * h),
+            h=int(params[2] * w),
+            k=int(params[3] * h),
+            r=params[4] * math.pi,
+            alpha=params[5]
+        )
+
     def get_bounds(self, h=None, w=None):
         return rasterize_ellipse(a=self.a, b=self.b, h=self.h, k=self.k, r=self.r)
 

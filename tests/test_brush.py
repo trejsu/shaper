@@ -23,3 +23,14 @@ def test_merge_bounds():
     expected_merged = np.array([[1, 5, 3], [0, 3, 4], [1, 2, 5]])
     merged = merge_bounds_for_simple_path(bounds=bounds)
     assert np.array_equal(merged, expected_merged)
+
+
+def test_from_normalized_params():
+    normalized = [0.54, 0.246666667, 0.26, 0.06, 0.71, 0.346666667, 0.13, 0.5]
+    w = 100
+    h = 150
+    expected_points = np.array([[54, 37], [26, 9], [71, 52]])
+    expected_size = 13
+    b = EllipseBrush.from_normalized_params(w, h, *normalized)
+    assert np.array_equal(b.path.points, expected_points)
+    assert b.size == expected_size

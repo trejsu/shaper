@@ -27,6 +27,16 @@ class Curve(Shape):
     def from_params(*params):
         return Curve(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
+    @staticmethod
+    def from_normalized_params(w, h, *params):
+        points = np.empty(shape=(3, 2))
+        points[:, 0] = [int(x * w) for x in params[:-1][::2]]
+        points[:, 1] = [int(y * h) for y in params[:-1][1::2]]
+        return Curve(
+            points=points,
+            alpha=params[-1]
+        )
+
     def get_bounds(self, h=None, w=None):
         bounds, self.extremum = rasterize_curve(self.points, 0)
         self.num_bounds = bounds.shape[0]

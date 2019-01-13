@@ -36,3 +36,13 @@ def test_from_params_should_not_produce_ellipse_with_a_and_b_less_than_1(a, b):
     e = Ellipse.from_params(a, b, 1, 2, 3, 4)
     assert e.a > 0
     assert e.b > 0
+
+
+def test_from_normalized_params():
+    normalized = [0.05, 0.2733333333333333, 0.69, 0.04666666666666667, 0.35955498223427457, 0.5]
+    w = 100
+    h = 150
+    expected_params = np.array([5, 41, 69, 7, 1.1295752907488055])
+    e = Ellipse.from_normalized_params(w, h, *normalized)
+    assert np.array_equal(e.args(), expected_params)
+    assert e.alpha == 0.5

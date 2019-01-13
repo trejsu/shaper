@@ -34,7 +34,7 @@ class Strategy(object):
         raise NotImplementedError
 
     def _random_shape(self):
-        shape = np.random.randint(4) if self.shape_mode == 0 else self.shape_mode - 1
+        shape = np.random.randint(5) if self.shape_mode == 0 else self.shape_mode - 1
         return {
             0: Triangle.random,
             1: Rectangle.random,
