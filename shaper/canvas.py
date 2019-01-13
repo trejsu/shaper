@@ -13,10 +13,11 @@ log = logging.getLogger(__name__)
 
 
 class Canvas(object):
-    def __init__(self, target, size):
+    def __init__(self, target, size, output_size):
         self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
+        self.output_size = output_size
         self.prev_img = None
         self.prev_mse = None
         self.showed = None
@@ -59,6 +60,7 @@ class Canvas(object):
         self.img = self.prev_img
         self.mse = self.prev_mse
 
+    # todo: save in requested output size
     def save(self, output):
         mimg.imsave(output, self.img.astype(np.uint8))
 

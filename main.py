@@ -50,7 +50,7 @@ def find_best_shape(canvas, strategy):
 
 
 def init():
-    canvas = Canvas(ARGS.input, ARGS.resize)
+    canvas = Canvas(target=ARGS.input, size=ARGS.resize, output_size=ARGS.output_size)
     show = show_function(canvas)
     score = canvas.init()
     log.info(f'Initial score: {score}')
@@ -143,5 +143,6 @@ if __name__ == '__main__':
                         help='Size to which input will be scaled before drawing - the bigger the '
                              'longer it will take but the more details can be captured',
                         default=100)
+    parser.add_argument('--output-size', type=int, help='Output image size', default=512)
     ARGS = parser.parse_args()
     main()
