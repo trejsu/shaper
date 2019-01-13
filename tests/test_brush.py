@@ -3,18 +3,18 @@ import numpy as np
 from shaper.shape.brush import Brush, EllipseBrush, merge_bounds_for_simple_path
 
 
-def test_args_intervals():
+def test_params_intervals():
     w = 100
     h = 200
     expected = np.array([w, h, w, h, w, h, min(w, h)])
-    actual = Brush.args_intervals()(w=w, h=h)
+    actual = Brush.params_intervals()(w=w, h=h)
     assert np.array_equal(expected, actual)
 
 
-def test_args():
+def test_params():
     brush = EllipseBrush.from_params(1, 2, 3, 4, 5, 6, 1, 10)
     expected = np.array([1, 2, 3, 4, 5, 6, 1])
-    actual = brush.args()
+    actual = brush.params()
     assert np.array_equal(expected, actual)
 
 
@@ -34,3 +34,12 @@ def test_from_normalized_params():
     b = EllipseBrush.from_normalized_params(w, h, *normalized)
     assert np.array_equal(b.path.points, expected_points)
     assert b.size == expected_size
+
+
+def test_normalized_params():
+    b = EllipseBrush.from_params(*[54, 15, 26, 9, 71, 300, 13, 0.5])
+    w = 100
+    h = 150
+    expected = np.array([0.54, 0.1, 0.26, 0.06, 0.71, 2, 0.13])
+    normalized = b.normalized_params(w, h)
+    assert np.array_equal(normalized, expected)

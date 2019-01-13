@@ -92,7 +92,7 @@ def pick_strategy(best_shape, canvas):
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
             optimizer=optimizer(
-                initial_params=best_shape.args(),
+                initial_params=best_shape.params(),
                 learning_rate=ARGS.learning_rate
             ),
             shape_mode=ARGS.shape_mode

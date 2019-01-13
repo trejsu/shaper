@@ -7,6 +7,7 @@ from shaper.shape.rectangle import Rectangle
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.shape import Shape
 from shaper.shape.shape import crop_bounds
+from shaper.shape.brush import EllipseBrush
 
 
 def test_should_leave_bounds_unchanged_if_no_need_to_crop():
@@ -76,7 +77,7 @@ def test_opposite_rectangle_points_should_sum_up():
     assert bdy - 1 <= acy <= bdy + 1
 
 
-def test_args_method_should_return_float_array():
+def test_params_method_should_return_float_array():
     for shape in Shape.__subclasses__():
-        args = shape.random(100, 100, 1).args()
-        assert args.dtype == np.float64, f'Tested shape: {shape}, actual type: {args.dtype}'
+        params = shape.random(100, 100, 1).params()
+        assert params.dtype == np.float64, f'Tested shape: {shape}, actual type: {params.dtype}'

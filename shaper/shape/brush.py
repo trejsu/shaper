@@ -62,12 +62,15 @@ class Brush(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def args(self):
-        return np.append(self.path.args(), self.size)
+    def params(self):
+        return np.append(self.path.params(), self.size)
+
+    def normalized_params(self, w, h):
+        return np.append(self.path.normalized_params(w, h), self.size / min(w, h))
 
     @staticmethod
-    def args_intervals():
-        return lambda w, h: np.append(Curve.args_intervals()(w, h), min(w, h))
+    def params_intervals():
+        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h))
 
     @abstractmethod
     def get_shape(self, x, y, size):

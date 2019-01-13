@@ -41,11 +41,14 @@ class Triangle(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def args(self):
+    def params(self):
         return self.points.reshape(-1, ).astype(np.float64)
 
+    def normalized_params(self, w, h):
+        return self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h])
+
     @staticmethod
-    def args_intervals():
+    def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
 
 

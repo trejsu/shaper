@@ -43,13 +43,6 @@ class Strategy(object):
             4: EllipseBrush.random
         }[shape](w=self.w, h=self.h, alpha=self.alpha)
 
-    @staticmethod
-    def _shape_class(shape):
-        classes = [Triangle, Rectangle, Ellipse, Curve, EllipseBrush]
-        for cls in classes:
-            if isinstance(shape, cls):
-                return cls
-
 
 class RandomStrategy(Strategy):
 
@@ -76,9 +69,9 @@ class SimpleEvolutionStrategy(Strategy):
     def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, shape_mode=0):
         super().__init__(w, h, alpha, shape_mode)
         self.n = n
-        self.shape = Strategy._shape_class(initial_shape)
-        self.mean = np.array(initial_shape.args(), dtype=np.float64)
-        self.sigma = sigma_factor * self.shape.args_intervals()(w=self.w, h=self.h)
+        self.shape = initial_shape.__class__
+        self.mean = np.array(initial_shape.params(), dtype=np.float64)
+        self.sigma = sigma_factor * self.shape.params_intervals()(w=self.w, h=self.h)
         self.shapes = None
         self.scores = None
         self.best = None
@@ -86,16 +79,16 @@ class SimpleEvolutionStrategy(Strategy):
     def ask(self):
         shapes = []
         for _ in range(self.n):
-            args = [np.random.normal(loc=mean, scale=sigma) for mean, sigma in
-                    zip(self.mean, self.sigma)]
-            shapes.append(self.shape.from_params(*args, self.alpha))
+            params = [np.random.normal(loc=mean, scale=sigma) for mean, sigma in
+                      zip(self.mean, self.sigma)]
+            shapes.append(self.shape.from_params(*params, self.alpha))
         self.shapes = shapes
         return self.shapes
 
     def tell(self, scores):
         self.scores = scores
         self.best = np.argmin(self.scores)
-        self.mean = self.shapes[self.best].args()
+        self.mean = self.shapes[self.best].params()
 
     def result(self):
         return self.shapes[self.best], self.scores[self.best]
@@ -107,8 +100,8 @@ class EvolutionStrategy(Strategy):
         super().__init__(w, h, alpha, shape_mode)
         self.n = n
 
-        self.sigma = sigma_factor * initial_shape.args_intervals()(w=self.w, h=self.h)
-        self.shape = Strategy._shape_class(initial_shape)
+        self.sigma = sigma_factor * initial_shape.params_intervals()(w=self.w, h=self.h)
+        self.shape = initial_shape.__class__
         self.optimizer = optimizer
 
         self.shapes = None
@@ -120,9 +113,9 @@ class EvolutionStrategy(Strategy):
         self.eps = np.random.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
         for i in range(self.n):
-            args = [theta + sigma * eps for theta, sigma, eps in
-                    zip(self.optimizer.get_params(), self.sigma, self.eps[i])]
-            shape = self.shape.from_params(*args, self.alpha)
+            params = [theta + sigma * eps for theta, sigma, eps in
+                      zip(self.optimizer.get_params(), self.sigma, self.eps[i])]
+            shape = self.shape.from_params(*params, self.alpha)
             shapes.append(shape)
         self.shapes = shapes
         return self.shapes

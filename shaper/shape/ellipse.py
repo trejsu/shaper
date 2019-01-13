@@ -46,11 +46,17 @@ class Ellipse(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def args(self):
+    def params(self):
         return np.array([self.a, self.b, self.h, self.k, self.r], dtype=np.float64)
 
+    def normalized_params(self, w, h):
+        return np.array(
+            [self.a, self.b, self.h, self.k, self.r],
+            dtype=np.float64
+        ) / np.array([w, h, w, h, math.pi])
+
     @staticmethod
-    def args_intervals():
+    def params_intervals():
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 
     def __str__(self):

@@ -19,6 +19,11 @@ class Shape(object):
     def from_normalized_params(w, h, *params):
         raise NotImplementedError
 
+    @staticmethod
+    @abstractmethod
+    def params_intervals():
+        raise NotImplementedError
+
     @abstractmethod
     def get_bounds(self, h, w):
         raise NotImplementedError
@@ -28,12 +33,11 @@ class Shape(object):
         raise NotImplementedError
 
     @abstractmethod
-    def args(self):
+    def params(self):
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def args_intervals():
+    def normalized_params(self, w, h):
         raise NotImplementedError
 
     def render(self, img, target):
