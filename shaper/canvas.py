@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.util import mse_full, average_color, update_mse
+from shaper.util import mse_full, average_color, update_mse, resize_to_size
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 
 
 class Canvas(object):
-    def __init__(self, target):
-        self.target = mimg.imread(target)[:, :, :3].astype(np.float)
+    def __init__(self, target, size):
+        self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
         self.prev_img = None

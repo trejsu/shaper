@@ -5,6 +5,19 @@ from numba import njit
 MIN_VALUE = -9999999999999
 
 
+def resize_to_size(img, size):
+    w = img.shape[1]
+    h = img.shape[0]
+    if w > h:
+        scale = size / w
+    else:
+        scale = size / h
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+    return resize(img=img, w=new_w, h=new_h)
+
+
+# todo: fix quality
 def resize(img, w, h):
     result = Image.fromarray(img)
     result = result.resize((w, h))
