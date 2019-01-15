@@ -19,7 +19,7 @@ class Brush(Shape):
     @classmethod
     def random(cls, w, h, alpha):
         path = Curve.random(w=w, h=h, alpha=alpha)
-        size = np.random.randint(1, min(w, h))
+        size = np.random.randint(1, min(w, h) // 2)
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
@@ -29,8 +29,8 @@ class Brush(Shape):
     @classmethod
     def from_normalized_params(cls, w, h, *params):
         return cls(
-            path=Curve.from_normalized_params(w, h, *params[:-1]),
-            size=int(params[-2] * min(w, h)),
+            path=Curve.from_normalized_params(w, h, *params[:-2]),
+            size=int(params[-2] * (min(w, h) // 2)),
             alpha=params[-1]
         )
 
@@ -66,11 +66,12 @@ class Brush(Shape):
         return np.append(self.path.params(), self.size)
 
     def normalized_params(self, w, h):
-        return np.append(self.path.normalized_params(w, h), self.size / min(w, h))
+        return np.append(self.path.normalized_params(w, h),
+                         [self.size / (min(w, h) // 2), self.alpha])
 
     @staticmethod
     def params_intervals():
-        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h))
+        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // 2)
 
     @abstractmethod
     def get_shape(self, x, y, size):

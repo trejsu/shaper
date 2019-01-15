@@ -4,7 +4,6 @@ from abc import abstractmethod
 import numpy as np
 
 from shaper.shape.brush import EllipseBrush
-from shaper.shape.curve import Curve
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.rectangle import Rectangle
 from shaper.shape.triangle import Triangle
@@ -34,13 +33,12 @@ class Strategy(object):
         raise NotImplementedError
 
     def _random_shape(self):
-        shape = np.random.randint(5) if self.shape_mode == 0 else self.shape_mode - 1
+        shape = np.random.randint(4) if self.shape_mode == 0 else self.shape_mode - 1
         return {
             0: Triangle.random,
             1: Rectangle.random,
             2: Ellipse.random,
-            3: Curve.random,
-            4: EllipseBrush.random
+            3: EllipseBrush.random
         }[shape](w=self.w, h=self.h, alpha=self.alpha)
 
 

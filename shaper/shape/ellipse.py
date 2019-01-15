@@ -50,10 +50,10 @@ class Ellipse(Shape):
         return np.array([self.a, self.b, self.h, self.k, self.r], dtype=np.float64)
 
     def normalized_params(self, w, h):
-        return np.array(
+        return np.append(np.array(
             [self.a, self.b, self.h, self.k, self.r],
             dtype=np.float64
-        ) / np.array([w, h, w, h, math.pi])
+        ) / np.array([w, h, w, h, math.pi]), self.alpha)
 
     @staticmethod
     def params_intervals():

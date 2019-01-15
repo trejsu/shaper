@@ -45,7 +45,10 @@ class Triangle(Shape):
         return self.points.reshape(-1, ).astype(np.float64)
 
     def normalized_params(self, w, h):
-        return self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h])
+        return np.append(
+            arr=self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h]),
+            values=self.alpha
+        )
 
     @staticmethod
     def params_intervals():

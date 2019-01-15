@@ -14,11 +14,12 @@ log = logging.getLogger(__name__)
 
 class Canvas(object):
     def __init__(self, target, size, output_size, num_shapes):
+        self.target_path = target
         self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.mse = mse_full(target=self.target, x=self.img)
         self.output_size = output_size
-        self.shapes = np.empty(shape=(num_shapes, 2))
+        self.shapes = [None] * num_shapes
         self.current_shape_num = 0
         self.prev_img = None
         self.prev_mse = None
@@ -61,9 +62,29 @@ class Canvas(object):
         self.mse = self.prev_mse
         self.current_shape_num -= 1
 
-    # todo: save in requested output size
     def save(self, output):
-        mimg.imsave(output, self.img.astype(np.uint8))
+        target = resize_to_size(
+            img=mimg.imread(self.target_path)[:, :, :3],
+            size=self.output_size
+        ).astype(np.float)
+
+        img = np.full(
+            shape=target.shape,
+            fill_value=average_color(self.target),
+            dtype=np.float
+        )
+
+        assert img.shape == target.shape
+
+        for cls, normalized_params in self.shapes:
+            shape = cls.from_normalized_params(
+                img.shape[1],
+                img.shape[0],
+                *normalized_params
+            )
+            shape.render(img=img, target=target)
+
+        mimg.imsave(output, img.astype(np.uint8))
 
     def evaluate(self, shape):
         score = self.add(shape)
@@ -74,10 +95,10 @@ class Canvas(object):
         return np.average(self.mse)
 
     def _add_to_list(self, shape):
-        self.shapes[self.current_shape_num] = [
+        self.shapes[self.current_shape_num] = (
             shape.__class__,
-            shape.normalized_params(*self.size())
-        ]
+            shape.normalized_params(*self.size()),
+        )
         self.current_shape_num += 1
 
     def _showable_img(self):
