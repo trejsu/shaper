@@ -24,12 +24,12 @@ class Brush(Shape):
 
     @classmethod
     def from_params(cls, *params):
-        return cls(path=Curve.from_params(*params[:-1]), size=params[-2], alpha=params[-1])
+        return cls(path=Curve.from_params(*params[:-2], params[-1]), size=params[-2], alpha=params[-1])
 
     @classmethod
     def from_normalized_params(cls, w, h, *params):
         return cls(
-            path=Curve.from_normalized_params(w, h, *params[:-2]),
+            path=Curve.from_normalized_params(w, h, *params[:-2], params[-1]),
             size=int(params[-2] * (min(w, h) // 2)),
             alpha=params[-1]
         )
@@ -66,7 +66,7 @@ class Brush(Shape):
         return np.append(self.path.params(), self.size)
 
     def normalized_params(self, w, h):
-        return np.append(self.path.normalized_params(w, h),
+        return np.append(self.path.normalized_params(w, h)[:-1],
                          [self.size / (min(w, h) // 2), self.alpha])
 
     @staticmethod

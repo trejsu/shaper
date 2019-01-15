@@ -18,6 +18,6 @@ def test_normalized_params():
     w = 100
     h = 150
     expected = np.array(
-        [1, 0.2866666666666667, 0.85, 0.32666666666666666, 0.65, 0.013333333333333334])
+        [1, 0.2866666666666667, 0.85, 0.32666666666666666, 0.65, 0.013333333333333334, 0.5])
     normalized = t.normalized_params(w, h)
     assert np.array_equal(normalized, expected)

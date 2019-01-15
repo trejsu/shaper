@@ -52,6 +52,6 @@ def test_normalized_params():
     e = Ellipse.from_params(*[5, 41, 69, 7, 1.1295752907488055, 0.5])
     w = 100
     h = 150
-    expected = np.array([0.05, 0.2733333333333333, 0.69, 0.04666666666666667, 0.35955498223427457])
+    expected = np.array([0.05, 0.2733333333333333, 0.69, 0.04666666666666667, 0.35955498223427457, 0.5])
     normalized = e.normalized_params(w, h)
     assert np.array_equal(normalized, expected)
