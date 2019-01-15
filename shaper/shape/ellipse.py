@@ -4,6 +4,7 @@ import numpy as np
 from numba import njit
 
 from shaper.shape.shape import Shape
+from shaper.util import timeit
 
 
 class Ellipse(Shape):
@@ -17,6 +18,7 @@ class Ellipse(Shape):
         self.alpha = alpha
 
     @staticmethod
+    @timeit
     def random(w, h, alpha):
         center_x = np.random.randint(w)
         center_y = np.random.randint(h)
@@ -26,10 +28,12 @@ class Ellipse(Shape):
         return Ellipse(a=a, b=b, h=center_x, k=center_y, r=rotation, alpha=alpha)
 
     @staticmethod
+    @timeit
     def from_params(*params):
         return Ellipse(*params)
 
     @staticmethod
+    @timeit
     def from_normalized_params(w, h, *params):
         return Ellipse(
             a=int(params[0] * w),
@@ -40,15 +44,18 @@ class Ellipse(Shape):
             alpha=params[5]
         )
 
+    @timeit
     def get_bounds(self, h=None, w=None):
         return rasterize_ellipse(a=self.a, b=self.b, h=self.h, k=self.k, r=self.r)
 
     def get_alpha(self):
         return self.alpha
 
+    @timeit
     def params(self):
         return np.array([self.a, self.b, self.h, self.k, self.r], dtype=np.float64)
 
+    @timeit
     def normalized_params(self, w, h):
         return np.append(np.array(
             [self.a, self.b, self.h, self.k, self.r],
@@ -56,6 +63,7 @@ class Ellipse(Shape):
         ) / np.array([w, h, w, h, math.pi]), self.alpha)
 
     @staticmethod
+    @timeit
     def params_intervals():
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 

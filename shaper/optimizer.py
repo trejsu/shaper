@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 import numpy as np
+from .util import timeit
 
 
 class Optimizer(object):
@@ -122,6 +123,7 @@ class Adam(Optimizer):
         self.v = np.zeros(initial_params.shape)
         self.num_steps = 0
 
+    @timeit
     def step(self, gradients):
         self.num_steps += 1
         self.m = self.beta1 * self.m + (1 - self.beta1) * gradients

@@ -5,6 +5,7 @@ import time
 from shaper.canvas import Canvas
 from shaper.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
+from shaper.util import print_times
 
 ARGS = None
 
@@ -39,6 +40,9 @@ def main():
 
     if ARGS.output is not None:
         canvas.save(ARGS.output)
+
+    if ARGS.time:
+        print_times()
 
 
 def find_best_shape(canvas, strategy):
@@ -149,5 +153,6 @@ if __name__ == '__main__':
                              'longer it will take but the more details can be captured',
                         default=100)
     parser.add_argument('--output-size', type=int, help='Output image size', default=512)
+    parser.add_argument('--time', action='store_true', default=False)
     ARGS = parser.parse_args()
     main()

@@ -4,6 +4,7 @@ import matplotlib
 import matplotlib.image as mimg
 
 from shaper.util import mse_full, average_color, update_mse, resize_to_size
+from .util import timeit
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -46,6 +47,7 @@ class Canvas(object):
             self.showed.set_data(img)
             self.fig.canvas.draw()
 
+    @timeit
     def add(self, shape):
         self.prev_img = self.img.copy()
         self.prev_mse = self.mse.copy()
@@ -54,14 +56,17 @@ class Canvas(object):
         self._add_to_list(shape)
         return self._score()
 
+    @timeit
     def size(self):
         return self.img.shape[1], self.img.shape[0]
 
+    @timeit
     def undo(self):
         self.img = self.prev_img
         self.mse = self.prev_mse
         self.current_shape_num -= 1
 
+    @timeit
     def save(self, output):
         target = resize_to_size(
             img=mimg.imread(self.target_path)[:, :, :3],
@@ -86,14 +91,17 @@ class Canvas(object):
 
         mimg.imsave(output, img.astype(np.uint8))
 
+    @timeit
     def evaluate(self, shape):
         score = self.add(shape)
         self.undo()
         return score
 
+    @timeit
     def _score(self):
         return np.average(self.mse)
 
+    @timeit
     def _add_to_list(self, shape):
         self.shapes[self.current_shape_num] = (
             shape.__class__,

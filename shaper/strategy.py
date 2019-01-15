@@ -8,6 +8,7 @@ from shaper.shape.ellipse import Ellipse
 from shaper.shape.rectangle import Rectangle
 from shaper.shape.triangle import Triangle
 from shaper.util import normalize
+from .util import timeit
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +108,7 @@ class EvolutionStrategy(Strategy):
         self.eps = None
         self.best = None
 
+    @timeit
     def ask(self):
         self.eps = np.random.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
@@ -118,6 +120,7 @@ class EvolutionStrategy(Strategy):
         self.shapes = shapes
         return self.shapes
 
+    @timeit
     def tell(self, scores):
         self.scores = scores
         normalized_scores = normalize(scores)
@@ -125,5 +128,6 @@ class EvolutionStrategy(Strategy):
         gradient = np.dot(normalized_scores.T, self.eps) / (self.n * self.sigma)
         self.optimizer.step(gradient)
 
+    @timeit
     def result(self):
         return self.shapes[self.best], self.scores[self.best]

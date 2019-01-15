@@ -3,7 +3,7 @@ from abc import abstractmethod
 import numpy as np
 from numba import njit
 
-from shaper.util import bounds_to_pixels, MIN_VALUE
+from shaper.util import bounds_to_pixels, MIN_VALUE, timeit
 from .curve import Curve
 from .ellipse import Ellipse
 from .shape import Shape, crop_bounds
@@ -17,16 +17,20 @@ class Brush(Shape):
         self.alpha = alpha
 
     @classmethod
+    @timeit
     def random(cls, w, h, alpha):
         path = Curve.random(w=w, h=h, alpha=alpha)
         size = np.random.randint(1, min(w, h) // 2)
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
+    @timeit
     def from_params(cls, *params):
-        return cls(path=Curve.from_params(*params[:-2], params[-1]), size=params[-2], alpha=params[-1])
+        return cls(path=Curve.from_params(*params[:-2], params[-1]), size=params[-2],
+                   alpha=params[-1])
 
     @classmethod
+    @timeit
     def from_normalized_params(cls, w, h, *params):
         return cls(
             path=Curve.from_normalized_params(w, h, *params[:-2], params[-1]),
@@ -34,6 +38,7 @@ class Brush(Shape):
             alpha=params[-1]
         )
 
+    @timeit
     def get_bounds(self, h, w):
         centers = self.get_shapes_centers(h, w)
         shapes = [self.get_shape(x=x, y=y, size=self.size) for x, y in centers]
@@ -52,6 +57,7 @@ class Brush(Shape):
 
         return merge_bounds_for_simple_path(bounds=bounds)
 
+    @timeit
     def get_shapes_centers(self, h, w):
         path_bounds = self.path.get_bounds()
         crop_bounds(bounds=path_bounds, h=h, w=w)
@@ -62,18 +68,22 @@ class Brush(Shape):
     def get_alpha(self):
         return self.alpha
 
+    @timeit
     def params(self):
         return np.append(self.path.params(), self.size)
 
+    @timeit
     def normalized_params(self, w, h):
         return np.append(self.path.normalized_params(w, h)[:-1],
                          [self.size / (min(w, h) // 2), self.alpha])
 
     @staticmethod
+    @timeit
     def params_intervals():
         return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // 2)
 
     @abstractmethod
+    @timeit
     def get_shape(self, x, y, size):
         raise NotImplementedError
 
@@ -87,6 +97,7 @@ class EllipseBrush(Brush):
     def __init__(self, path, size, alpha):
         super().__init__(path=path, size=size, alpha=alpha)
 
+    @timeit
     def get_shape(self, x, y, size):
         return self.brush_type(a=size, b=size, h=x, k=y, r=0, alpha=self.alpha)
 

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from numba import njit
+from shaper.util import timeit
 
 
 class Shape(object):
@@ -40,6 +41,7 @@ class Shape(object):
     def normalized_params(self, w, h):
         raise NotImplementedError
 
+    @timeit
     def render(self, img, target):
         bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])

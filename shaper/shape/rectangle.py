@@ -4,6 +4,7 @@ import numpy as np
 from numba import njit
 
 from shaper.shape.shape import Shape, f
+from shaper.util import timeit
 
 
 class Rectangle(Shape):
@@ -17,6 +18,7 @@ class Rectangle(Shape):
             f'D={self.points[3]})'
 
     @staticmethod
+    @timeit
     def random(w, h, alpha):
         def deg_to_rad(deg):
             return deg * math.pi / 180
@@ -46,10 +48,12 @@ class Rectangle(Shape):
                          alpha=alpha)
 
     @staticmethod
+    @timeit
     def from_params(*params):
         return Rectangle(points=np.array(params[:-1]).reshape(4, 2), alpha=params[-1])
 
     @staticmethod
+    @timeit
     def from_normalized_params(w, h, *params):
         points = np.empty(shape=(4, 2))
         points[:, 0] = [int(x * w) for x in params[:-1][::2]]
@@ -59,19 +63,23 @@ class Rectangle(Shape):
             alpha=params[-1]
         )
 
+    @timeit
     def get_bounds(self, h=None, w=None):
         return rasterize_rectangle(self.points)
 
     def get_alpha(self):
         return self.alpha
 
+    @timeit
     def params(self):
         return self.points.reshape(-1, ).astype(np.float64)
 
+    @timeit
     def normalized_params(self, w, h):
         return np.append(self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h, w, h]), self.alpha)
 
     @staticmethod
+    @timeit
     def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h, w, h])
 

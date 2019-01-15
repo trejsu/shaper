@@ -1,10 +1,30 @@
+import time
+from collections import defaultdict
+
 import numpy as np
 from PIL import Image
 from numba import njit
 
 MIN_VALUE = -9999999999999
 
+times = defaultdict(int)
+calls = defaultdict(int)
 
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        name = f'{method.__module__}.{method.__name__}'
+        times[name] += (te - ts) * 1000
+        calls[name] += 1
+        return result
+
+    return timed
+
+
+@timeit
 def resize_to_size(img, size):
     w = img.shape[1]
     h = img.shape[0]
@@ -17,20 +37,24 @@ def resize_to_size(img, size):
     return resize(img=img, w=new_w, h=new_h)
 
 
+@timeit
 def resize(img, w, h):
     result = Image.fromarray(img)
     result = result.resize((w, h), Image.ANTIALIAS)
     return np.array(result)
 
 
+@timeit
 def mse_full(target, x):
     return np.square(target - x)
 
 
+@timeit
 def mse_partial(target, x, mask):
     return np.where(mask == 0, np.zeros(target.shape), np.square(target - x))
 
 
+@timeit
 def average_color(img):
     return np.average(img, axis=(0, 1))
 
@@ -45,6 +69,7 @@ def update_mse(mse, bounds, img, target):
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
 
 
+@timeit
 def normalize(arr):
     arr_minus_mean = np.array(arr) - np.mean(arr)
     if np.all(arr_minus_mean == 0):
@@ -68,3 +93,11 @@ def bounds_to_pixels(bounds):
             j += 1
 
     return pixels
+
+
+def print_times():
+    import operator
+    mean_times = {name: t / calls[name] for name, t in times.items()}
+    sorted_times = sorted(times.items(), key=operator.itemgetter(1))
+    for name, t in sorted_times:
+        print(f'{name}: {t:.2f}ms (calls = {calls[name]}, mean = {mean_times[name]:.2f}ms)')
