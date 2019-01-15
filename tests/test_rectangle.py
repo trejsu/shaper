@@ -23,3 +23,13 @@ def test_normalized_params():
          -0.02, 0.5])
     normalized = r.normalized_params(w, h)
     assert np.array_equal(normalized, expected)
+
+
+def test_opposite_rectangle_points_should_sum_up():
+    r = Rectangle.random(w=100, h=100, alpha=1)
+    acx = r.points[1][0] + r.points[3][0]
+    bdx = r.points[0][0] + r.points[2][0]
+    assert acx - 1 <= bdx <= acx + 1
+    bdy = r.points[1][1] + r.points[3][1]
+    acy = r.points[0][1] + r.points[2][1]
+    assert bdy - 1 <= acy <= bdy + 1

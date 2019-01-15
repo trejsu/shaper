@@ -84,7 +84,6 @@ def average_color(img, bounds):
     return r // pixels, g // pixels, b // pixels
 
 
-# todo: multiple bounds fot he same y at the edges of the image is causing "more alpha" lines
 @njit("(i8[:,:], i8, i8)")
 def crop_bounds(bounds, h, w):
     for i in range(len(bounds)):
