@@ -17,10 +17,9 @@ def resize_to_size(img, size):
     return resize(img=img, w=new_w, h=new_h)
 
 
-# todo: fix quality
 def resize(img, w, h):
     result = Image.fromarray(img)
-    result = result.resize((w, h))
+    result = result.resize((w, h), Image.ANTIALIAS)
     return np.array(result)
 
 
