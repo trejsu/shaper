@@ -16,12 +16,11 @@ class Curve(Shape):
     def __str__(self):
         return f'Curve(P0={self.points[0]}, P1={self.points[1]}, P2={self.points[2]})'
 
-
     @staticmethod
     @timeit
-    def random(w, h, alpha):
-        xs = np.random.randint(w, size=(3, 1))
-        ys = np.random.randint(h, size=(3, 1))
+    def random(w, h, alpha, rng):
+        xs = rng.randint(w, size=(3, 1))
+        ys = rng.randint(h, size=(3, 1))
         points = np.concatenate((xs, ys), axis=1)
         return Curve(points, alpha)
 

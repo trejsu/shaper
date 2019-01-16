@@ -15,11 +15,12 @@ log = logging.getLogger(__name__)
 
 class Strategy(object):
 
-    def __init__(self, w, h, alpha, shape_mode):
+    def __init__(self, w, h, alpha, shape_mode, rng):
         self.w = w
         self.h = h
         self.alpha = alpha
         self.shape_mode = shape_mode
+        self.rng = rng
 
     @abstractmethod
     def ask(self):
@@ -34,25 +35,25 @@ class Strategy(object):
         raise NotImplementedError
 
     def _random_shape(self):
-        shape = np.random.randint(4) if self.shape_mode == 0 else self.shape_mode - 1
+        shape = self.rng.randint(4) if self.shape_mode == 0 else self.shape_mode - 1
         return {
             0: Triangle.random,
             1: Rectangle.random,
             2: Ellipse.random,
             3: EllipseBrush.random
-        }[shape](w=self.w, h=self.h, alpha=self.alpha)
+        }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng)
 
 
 class RandomStrategy(Strategy):
 
-    def __init__(self, num_shapes, w, h, alpha, shape_mode=0):
-        super().__init__(w, h, alpha, shape_mode)
-        self.num_shapes = num_shapes
+    def __init__(self, n, w, h, alpha, rng, shape_mode=0):
+        super().__init__(w, h, alpha, shape_mode, rng)
+        self.n = n
         self.shapes = None
         self.scores = None
 
     def ask(self):
-        self.shapes = [self._random_shape() for _ in range(self.num_shapes)]
+        self.shapes = [self._random_shape() for _ in range(self.n)]
         return self.shapes
 
     def tell(self, scores):
@@ -65,8 +66,8 @@ class RandomStrategy(Strategy):
 
 class SimpleEvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, shape_mode=0):
-        super().__init__(w, h, alpha, shape_mode)
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, rng, shape_mode=0):
+        super().__init__(w, h, alpha, shape_mode, rng)
         self.n = n
         self.shape = initial_shape.__class__
         self.mean = np.array(initial_shape.params(), dtype=np.float64)
@@ -78,7 +79,7 @@ class SimpleEvolutionStrategy(Strategy):
     def ask(self):
         shapes = []
         for _ in range(self.n):
-            params = [np.random.normal(loc=mean, scale=sigma) for mean, sigma in
+            params = [self.rng.normal(loc=mean, scale=sigma) for mean, sigma in
                       zip(self.mean, self.sigma)]
             shapes.append(self.shape.from_params(*params, self.alpha))
         self.shapes = shapes
@@ -95,8 +96,8 @@ class SimpleEvolutionStrategy(Strategy):
 
 class EvolutionStrategy(Strategy):
 
-    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer, shape_mode=0):
-        super().__init__(w, h, alpha, shape_mode)
+    def __init__(self, initial_shape, w, h, alpha, n, sigma_factor, optimizer, rng, shape_mode=0):
+        super().__init__(w, h, alpha, shape_mode, rng)
         self.n = n
 
         self.sigma = sigma_factor * initial_shape.params_intervals()(w=self.w, h=self.h)
@@ -110,7 +111,7 @@ class EvolutionStrategy(Strategy):
 
     @timeit
     def ask(self):
-        self.eps = np.random.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
+        self.eps = self.rng.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
         for i in range(self.n):
             params = [theta + sigma * eps for theta, sigma, eps in

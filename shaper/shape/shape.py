@@ -1,13 +1,14 @@
 from abc import abstractmethod
 
 from numba import njit
+
 from shaper.util import timeit
 
 
 class Shape(object):
     @staticmethod
     @abstractmethod
-    def random(w, h, alpha):
+    def random(w, h, alpha, rng):
         raise NotImplementedError
 
     @staticmethod

@@ -2,6 +2,8 @@ import argparse
 import logging
 import time
 
+import numpy as np
+
 from shaper.canvas import Canvas
 from shaper.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
@@ -88,7 +90,8 @@ def pick_strategy(best_shape, canvas):
                 initial_params=best_shape.params(),
                 learning_rate=ARGS.learning_rate
             ),
-            shape_mode=ARGS.shape_mode
+            shape_mode=ARGS.shape_mode,
+            rng=ARGS.rng
         )
     elif ARGS.algorithm == 'simple':
         strategy = SimpleEvolutionStrategy(
@@ -97,13 +100,15 @@ def pick_strategy(best_shape, canvas):
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
-            shape_mode=ARGS.shape_mode
+            shape_mode=ARGS.shape_mode,
+            rng=ARGS.rng
         )
     else:
         strategy = RandomStrategy(
             ARGS.sample,
             *canvas.size(),
-            alpha=ARGS.alpha
+            alpha=ARGS.alpha,
+            rng=ARGS.rng
         )
     return strategy
 
@@ -113,7 +118,8 @@ def find_best_random_shape(canvas):
         ARGS.random,
         *canvas.size(),
         alpha=ARGS.alpha,
-        shape_mode=ARGS.shape_mode
+        shape_mode=ARGS.shape_mode,
+        rng=ARGS.rng
     )
     shapes = random.ask()
     scores = [canvas.evaluate(shape) for shape in shapes]
@@ -154,5 +160,12 @@ if __name__ == '__main__':
                         default=100)
     parser.add_argument('--output-size', type=int, help='Output image size', default=512)
     parser.add_argument('--time', action='store_true', default=False)
+    parser.add_argument('--seed', type=int)
     ARGS = parser.parse_args()
+
+    seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)
+    rng = np.random.RandomState(seed=seed)
+    log.info(f'Rng seed = {seed}')
+    ARGS.rng = rng
+
     main()

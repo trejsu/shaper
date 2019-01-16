@@ -16,9 +16,9 @@ class Triangle(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha):
-        xs = np.random.randint(w, size=(3, 1))
-        ys = np.random.randint(h, size=(3, 1))
+    def random(w, h, alpha, rng):
+        xs = rng.randint(w, size=(3, 1))
+        ys = rng.randint(h, size=(3, 1))
         points = np.concatenate((xs, ys), axis=1)
         assert points.shape == (3, 2), f'Shape of points: {points.shape}, expected: (3, 2)'
         return Triangle(points, alpha)

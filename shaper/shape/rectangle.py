@@ -19,18 +19,18 @@ class Rectangle(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha):
+    def random(w, h, alpha, rng):
         def deg_to_rad(deg):
             return deg * math.pi / 180
 
         def rad_to_deg(rad):
             return rad * 180 / math.pi
 
-        cx = np.random.randint(w)
-        cy = np.random.randint(h)
-        rw = np.random.randint(1, w)
-        rh = np.random.randint(1, h)
-        rot = np.random.uniform(0, math.pi)
+        cx = rng.randint(w)
+        cy = rng.randint(h)
+        rw = rng.randint(1, w)
+        rh = rng.randint(1, h)
+        rot = rng.uniform(0, math.pi)
 
         x1 = cx + math.sin(
             (rot - deg_to_rad(90)) + math.asin(rh / (math.sqrt(rh * rh + rw * rw)))) * (
@@ -76,7 +76,9 @@ class Rectangle(Shape):
 
     @timeit
     def normalized_params(self, w, h):
-        return np.append(self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h, w, h]), self.alpha)
+        return np.append(
+            self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h, w, h]),
+            self.alpha)
 
     @staticmethod
     @timeit

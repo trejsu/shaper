@@ -19,12 +19,12 @@ class Ellipse(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha):
-        center_x = np.random.randint(w)
-        center_y = np.random.randint(h)
-        a = np.random.randint(1, w)
-        b = np.random.randint(1, h)
-        rotation = np.random.uniform(0, math.pi)
+    def random(w, h, alpha, rng):
+        center_x = rng.randint(w)
+        center_y = rng.randint(h)
+        a = rng.randint(1, w)
+        b = rng.randint(1, h)
+        rotation = rng.uniform(0, math.pi)
         return Ellipse(a=a, b=b, h=center_x, k=center_y, r=rotation, alpha=alpha)
 
     @staticmethod

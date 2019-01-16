@@ -69,5 +69,5 @@ def test_should_crop_when_multiple_variables_are_out_of_bounds(x1, x2, y, croppe
 
 def test_params_method_should_return_float_array():
     for shape in Shape.__subclasses__():
-        params = shape.random(100, 100, 1).params()
+        params = shape.random(100, 100, 1, rng=np.random.RandomState(seed=9)).params()
         assert params.dtype == np.float64, f'Tested shape: {shape}, actual type: {params.dtype}'

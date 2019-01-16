@@ -18,9 +18,9 @@ class Brush(Shape):
 
     @classmethod
     @timeit
-    def random(cls, w, h, alpha):
-        path = Curve.random(w=w, h=h, alpha=alpha)
-        size = np.random.randint(1, min(w, h) // 2)
+    def random(cls, w, h, alpha, rng):
+        path = Curve.random(w=w, h=h, alpha=alpha, rng=rng)
+        size = rng.randint(1, min(w, h) // 2)
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
