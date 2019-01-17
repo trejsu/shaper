@@ -45,13 +45,13 @@ def resize(img, w, h):
 
 
 @timeit
-def mse_full(target, x):
+def l2_full(target, x):
     return np.square(target - x)
 
 
 @timeit
-def mse_partial(target, x, mask):
-    return np.where(mask == 0, np.zeros(target.shape), np.square(target - x))
+def l1_full(target, x):
+    return np.abs(target - x)
 
 
 @timeit
@@ -60,12 +60,22 @@ def average_color(img):
 
 
 @njit("(f8[:,:,:], i8[:,:], f8[:,:,:], f8[:,:,:])")
-def update_mse(mse, bounds, img, target):
+def update_l2(distance, bounds, img, target):
     for i in range(len(bounds)):
         x1 = bounds[i, 0]
         x2 = bounds[i, 1]
         y = bounds[i, 2]
-        mse[y, min(x1, x2): max(x1, x2) + 1] = np.square(
+        distance[y, min(x1, x2): max(x1, x2) + 1] = np.square(
+            target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
+
+
+@njit("(f8[:,:,:], i8[:,:], f8[:,:,:], f8[:,:,:])")
+def update_l1(distance, bounds, img, target):
+    for i in range(len(bounds)):
+        x1 = bounds[i, 0]
+        x2 = bounds[i, 1]
+        y = bounds[i, 2]
+        distance[y, min(x1, x2): max(x1, x2) + 1] = np.abs(
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
 
 

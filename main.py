@@ -60,7 +60,8 @@ def init():
         target=ARGS.input,
         size=ARGS.resize,
         output_size=ARGS.output_size,
-        num_shapes=ARGS.n
+        num_shapes=ARGS.n,
+        metric=ARGS.metric
     )
     show = show_function(canvas)
     score = canvas.init()
@@ -161,6 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('--output-size', type=int, help='Output image size', default=512)
     parser.add_argument('--time', action='store_true', default=False)
     parser.add_argument('--seed', type=int)
+    parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
     ARGS = parser.parse_args()
 
     seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)

@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.util import mse_full, average_color, update_mse, resize_to_size
+from shaper.util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full
 from .util import timeit
 
 matplotlib.use("TkAgg")
@@ -14,16 +14,17 @@ log = logging.getLogger(__name__)
 
 
 class Canvas(object):
-    def __init__(self, target, size, output_size, num_shapes):
+    def __init__(self, target, size, output_size, num_shapes, metric):
         self.target_path = target
         self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
-        self.mse = mse_full(target=self.target, x=self.img)
+        self.distance = (l1_full if metric == 'l1' else l2_full)(target=self.target, x=self.img)
         self.output_size = output_size
+        self.update_distance = update_l1 if metric == 'l1' else update_l2
         self.shapes = [None] * num_shapes
         self.current_shape_num = 0
         self.prev_img = None
-        self.prev_mse = None
+        self.prev_distance = None
         self.showed = None
         self.fig = None
         log.debug(f'Initialized canvas with target shape: {self.target.shape}')
@@ -50,9 +51,14 @@ class Canvas(object):
     @timeit
     def add(self, shape):
         self.prev_img = self.img.copy()
-        self.prev_mse = self.mse.copy()
+        self.prev_distance = self.distance.copy()
         bounds = shape.render(self.img, self.target)
-        update_mse(mse=self.mse, bounds=bounds, img=self.img, target=self.target)
+        self.update_distance(
+            distance=self.distance,
+            bounds=bounds,
+            img=self.img,
+            target=self.target
+        )
         self._add_to_list(shape)
         return self._score()
 
@@ -63,7 +69,7 @@ class Canvas(object):
     @timeit
     def undo(self):
         self.img = self.prev_img
-        self.mse = self.prev_mse
+        self.distance = self.prev_distance
         self.current_shape_num -= 1
 
     @timeit
@@ -99,7 +105,7 @@ class Canvas(object):
 
     @timeit
     def _score(self):
-        return np.average(self.mse)
+        return np.average(self.distance)
 
     @timeit
     def _add_to_list(self, shape):
