@@ -1,13 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.shape.curve import Curve
-from shaper.shape.triangle import Triangle
-from shaper.shape.rectangle import Rectangle
-from shaper.shape.ellipse import Ellipse
-from shaper.shape.shape import Shape
 from shaper.shape.shape import crop_bounds
-from shaper.shape.brush import EllipseBrush
 
 
 def test_should_leave_bounds_unchanged_if_no_need_to_crop():
@@ -65,9 +59,3 @@ def test_should_crop_when_multiple_variables_are_out_of_bounds(x1, x2, y, croppe
     assert bounds[0][0] == cropped_x1, f'actual x1: {bounds[0][0]}, expected x1: {cropped_x1}'
     assert bounds[0][1] == cropped_x2, f'actual x2: {bounds[0][1]}, expected x2: {cropped_x2}'
     assert bounds[0][2] == cropped_y, f'actual y: {bounds[0][2]}, expected y: {cropped_y}'
-
-
-def test_params_method_should_return_float_array():
-    for shape in Shape.__subclasses__():
-        params = shape.random(100, 100, 1, rng=np.random.RandomState(seed=9)).params()
-        assert params.dtype == np.float64, f'Tested shape: {shape}, actual type: {params.dtype}'

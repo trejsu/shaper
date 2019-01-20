@@ -3,9 +3,9 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shaper.shape.brush import EllipseBrush, RectangleBrush
+from shaper.shape.brush import QuadrangleBrush, Quadrangle
 from shaper.shape.ellipse import Ellipse
-from shaper.shape.rectangle import Rectangle
+from shaper.shape.quadrangle import Rectangle
 from shaper.shape.triangle import Triangle
 from shaper.util import normalize
 from .util import timeit
@@ -40,8 +40,8 @@ class Strategy(object):
             0: Triangle.random,
             1: Rectangle.random,
             2: Ellipse.random,
-            3: EllipseBrush.random,
-            4: RectangleBrush.random,
+            3: Quadrangle.random,
+            4: QuadrangleBrush.random,
         }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng)
 
 

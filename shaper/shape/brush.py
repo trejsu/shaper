@@ -6,7 +6,7 @@ from numba import njit
 from shaper.util import bounds_to_pixels, MIN_VALUE, timeit
 from .curve import Curve
 from .ellipse import Ellipse
-from .rectangle import Rectangle
+from .quadrangle import Quadrangle
 from .shape import Shape, crop_bounds
 
 log = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class EllipseBrush(Brush):
         return path_pixels[::shapes_to_skip]
 
 
-class RectangleBrush(Brush):
+class QuadrangleBrush(Brush):
 
     def __init__(self, path, size, alpha):
         super().__init__(path=path, size=size, alpha=alpha)
@@ -116,9 +116,11 @@ class RectangleBrush(Brush):
         if path_pixels.shape[0] < 3:
             log.debug('Path pixels < 3, rectangle brush empty.')
             return np.empty(shape=(0, 3), dtype=np.int64)
-        points = generate_rectangle_points(path_pixels, self.size)
+        points = generate_quadrangle_points(path_pixels, self.size)
 
-        shapes = [Rectangle.from_params(p, self.get_alpha) for p in points]
+        shapes = [Quadrangle.from_params(p, self.get_alpha) for p in points]
+
+        # todo: 100 is way too high
         num_bounds = (100 * self.size) * len(shapes)
 
         bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
@@ -150,7 +152,7 @@ def find_orthogonal_vector(v, S, size, coordinate):
 
 
 @njit("i8[:,:,:](i8[:,:], i8)")
-def generate_rectangle_points(path_points, size):
+def generate_quadrangle_points(path_points, size):
     A = path_points[1:]
     B = path_points[:-1]
     S = (A + B) / 2

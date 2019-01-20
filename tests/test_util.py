@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.shape.rectangle import Rectangle
+from shaper.shape.quadrangle import Quadrangle
 from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels
 
 
@@ -92,8 +92,10 @@ def test_broken_partial_l2(x1, y1, x2, y2, x3, y3, x4, y4):
     assert img.dtype == np.float
     assert target.dtype == np.float
     assert distance.dtype == np.float
-    r = Rectangle(points=np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]], dtype=np.int64),
-                  alpha=0.5)
+    r = Quadrangle(
+        points=np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]], dtype=np.int64),
+        alpha=0.5
+    )
     bounds = r.render(img, target)
     update_l2(distance=distance, bounds=bounds, img=img, target=target)
     assert np.array_equal(distance, l2_full(target, img))
