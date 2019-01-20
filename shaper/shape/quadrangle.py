@@ -20,9 +20,13 @@ class Quadrangle(Shape):
 
     @staticmethod
     def random(w, h, alpha, rng):
-        xs = rng.randint(w, size=(4, 1))
-        ys = rng.randint(h, size=(4, 1))
-        points = np.concatenate((xs, ys), axis=1)
+        r = rng.randint(min(w, h) // 2)
+        cx = rng.randint(w)
+        cy = rng.randint(h)
+        angles = np.sort(rng.uniform(0, 2 * math.pi, 4))
+        xs = [cx + r * math.cos(angle) for angle in angles]
+        ys = [cy + r * math.sin(angle) for angle in angles]
+        points = np.concatenate((np.array(xs).reshape(4, 1), np.array(ys).reshape(4, 1)), axis=1)
         assert points.shape == (4, 2), f'Shape of points: {points.shape}, expected: (4, 2)'
         return Quadrangle(points, alpha)
 
@@ -128,7 +132,11 @@ class Rectangle(Shape):
 @njit("i8[:,:](i8[:,:])")
 def rasterize_quadrangle(points):
     bounds1 = rasterize_triangle(points[:-1])
-    bounds2 = rasterize_triangle(points[1:])
+    triangle2_points = np.empty(shape=(3, 2), dtype=np.int64)
+    triangle2_points[0] = points[0]
+    triangle2_points[1] = points[2]
+    triangle2_points[2] = points[3]
+    bounds2 = rasterize_triangle(triangle2_points)
     bounds1_len = bounds1.shape[0]
     bounds = np.empty(shape=(bounds1_len + bounds2.shape[0], 3), dtype=np.int64)
     bounds[:bounds1_len] = bounds1

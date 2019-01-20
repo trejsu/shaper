@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class Brush(Shape):
+    SIZE_SCALE = 4
 
     def __init__(self, path, size, alpha):
         self.path = path
@@ -23,7 +24,7 @@ class Brush(Shape):
     @timeit
     def random(cls, w, h, alpha, rng):
         path = Curve.random(w=w, h=h, alpha=alpha, rng=rng)
-        size = rng.randint(1, min(w, h) // 2)
+        size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE)
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
@@ -40,7 +41,7 @@ class Brush(Shape):
     def from_normalized_params(cls, w, h, *params):
         return cls(
             path=Curve.from_normalized_params(w, h, *params[:-2], params[-1]),
-            size=int(params[-2] * (min(w, h) // 2)),
+            size=int(params[-2] * (min(w, h) // Brush.SIZE_SCALE)),
             alpha=params[-1]
         )
 
@@ -58,12 +59,12 @@ class Brush(Shape):
     @timeit
     def normalized_params(self, w, h):
         return np.append(self.path.normalized_params(w, h)[:-1],
-                         [self.size / (min(w, h) // 2), self.alpha])
+                         [self.size / (min(w, h) // Brush.SIZE_SCALE), self.alpha])
 
     @staticmethod
     @timeit
     def params_intervals():
-        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // 2)
+        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // Brush.SIZE_SCALE)
 
     def __str__(self):
         return f'Brush(path={self.path}, size={self.size})'
@@ -145,7 +146,7 @@ def find_orthogonal_vector(v, S, size, coordinate):
     temp = np.copy(v[:, 0])
     v[:, 0] = v[:, 1]
     v[:, 1] = temp
-    v[:, 0] = -v[:, coordinate]
+    v[:, coordinate] = -v[:, coordinate]
     norm = np.sqrt(np.square(v).sum(axis=1)).reshape(-1, 1)
     normalized = v if np.any(norm == 0) else v / norm
     return normalized * size + S
@@ -165,9 +166,9 @@ def generate_quadrangle_points(path_points, size):
 
     for i in range(points.shape[0]):
         points[i, 0] = left[i]
-        points[i, 1] = left[i + 1]
-        points[i, 2] = right[i]
-        points[i, 3] = right[i + 1]
+        points[i, 1] = right[i]
+        points[i, 2] = right[i + 1]
+        points[i, 3] = left[i + 1]
 
     return points
 
