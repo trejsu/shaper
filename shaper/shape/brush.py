@@ -1,4 +1,4 @@
-from abc import abstractmethod
+import logging
 
 import numpy as np
 from numba import njit
@@ -6,7 +6,10 @@ from numba import njit
 from shaper.util import bounds_to_pixels, MIN_VALUE, timeit
 from .curve import Curve
 from .ellipse import Ellipse
+from .rectangle import Rectangle
 from .shape import Shape, crop_bounds
+
+log = logging.getLogger(__name__)
 
 
 class Brush(Shape):
@@ -26,8 +29,11 @@ class Brush(Shape):
     @classmethod
     @timeit
     def from_params(cls, *params):
-        return cls(path=Curve.from_params(*params[:-2], params[-1]), size=params[-2],
-                   alpha=params[-1])
+        return cls(
+            path=Curve.from_params(*params[:-2], params[-1]),
+            size=params[-2],
+            alpha=params[-1]
+        )
 
     @classmethod
     @timeit
@@ -39,6 +45,39 @@ class Brush(Shape):
         )
 
     @timeit
+    def get_bounds(self, h, w):
+        raise NotImplementedError
+
+    def get_alpha(self):
+        return self.alpha
+
+    @timeit
+    def params(self):
+        return np.append(self.path.params(), self.size)
+
+    @timeit
+    def normalized_params(self, w, h):
+        return np.append(self.path.normalized_params(w, h)[:-1],
+                         [self.size / (min(w, h) // 2), self.alpha])
+
+    @staticmethod
+    @timeit
+    def params_intervals():
+        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // 2)
+
+    def __str__(self):
+        return f'Brush(path={self.path}, size={self.size})'
+
+
+class EllipseBrush(Brush):
+
+    def __init__(self, path, size, alpha):
+        super().__init__(path=path, size=size, alpha=alpha)
+
+    @timeit
+    def get_shape(self, x, y, size):
+        return Ellipse(a=size, b=size, h=x, k=y, r=0, alpha=self.alpha)
+
     def get_bounds(self, h, w):
         centers = self.get_shapes_centers(h, w)
         shapes = [self.get_shape(x=x, y=y, size=self.size) for x, y in centers]
@@ -65,41 +104,70 @@ class Brush(Shape):
         shapes_to_skip = max(1, self.size // 2)
         return path_pixels[::shapes_to_skip]
 
-    def get_alpha(self):
-        return self.alpha
 
-    @timeit
-    def params(self):
-        return np.append(self.path.params(), self.size)
-
-    @timeit
-    def normalized_params(self, w, h):
-        return np.append(self.path.normalized_params(w, h)[:-1],
-                         [self.size / (min(w, h) // 2), self.alpha])
-
-    @staticmethod
-    @timeit
-    def params_intervals():
-        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // 2)
-
-    @abstractmethod
-    @timeit
-    def get_shape(self, x, y, size):
-        raise NotImplementedError
-
-    def __str__(self):
-        return f'Brush(path={self.path}, size={self.size})'
-
-
-class EllipseBrush(Brush):
-    brush_type = Ellipse
+class RectangleBrush(Brush):
 
     def __init__(self, path, size, alpha):
         super().__init__(path=path, size=size, alpha=alpha)
 
-    @timeit
+    def get_bounds(self, h, w):
+        path_pixels = self.path.get_points(n=10)
+
+        if path_pixels.shape[0] < 3:
+            log.debug('Path pixels < 3, rectangle brush empty.')
+            return np.empty(shape=(0, 3), dtype=np.int64)
+        points = generate_rectangle_points(path_pixels, self.size)
+
+        shapes = [Rectangle.from_params(p, self.get_alpha) for p in points]
+        num_bounds = (100 * self.size) * len(shapes)
+
+        bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
+
+        i = 0
+        for shape in shapes:
+            b = shape.get_bounds()
+            b_len = b.shape[0]
+            bounds[i:i + b_len] = b
+            i += b_len
+
+        bounds.resize((i, 3))
+
+        return bounds
+
     def get_shape(self, x, y, size):
-        return self.brush_type(a=size, b=size, h=x, k=y, r=0, alpha=self.alpha)
+        pass
+
+
+@njit("f8[:,:](f8[:,:], f8[:,:], i8, i8)")
+def find_orthogonal_vector(v, S, size, coordinate):
+    temp = np.copy(v[:, 0])
+    v[:, 0] = v[:, 1]
+    v[:, 1] = temp
+    v[:, 0] = -v[:, coordinate]
+    norm = np.sqrt(np.square(v).sum(axis=1)).reshape(-1, 1)
+    normalized = v if np.any(norm == 0) else v / norm
+    return normalized * size + S
+
+
+@njit("i8[:,:,:](i8[:,:], i8)")
+def generate_rectangle_points(path_points, size):
+    A = path_points[1:]
+    B = path_points[:-1]
+    S = (A + B) / 2
+    AB = B - S
+
+    left = find_orthogonal_vector(v=AB.copy(), S=S, size=size, coordinate=0)
+    right = find_orthogonal_vector(v=AB.copy(), S=S, size=size, coordinate=1)
+
+    points = np.empty(shape=(path_points.shape[0] - 2, 4, 2), dtype=np.int64)
+
+    for i in range(points.shape[0]):
+        points[i, 0] = left[i]
+        points[i, 1] = left[i + 1]
+        points[i, 2] = right[i]
+        points[i, 3] = right[i + 1]
+
+    return points
 
 
 @njit("i8[:,:](i8[:,:])")

@@ -1,8 +1,9 @@
 from abc import abstractmethod
 
+import numpy as np
 from numba import njit
 
-from shaper.util import timeit
+from shaper.util import timeit, MIN_VALUE
 
 
 class Shape(object):
@@ -93,3 +94,28 @@ def crop_bounds(bounds, h, w):
         bounds[i, 0] = max(0, min(w - 1, bounds[i, 0]))
         bounds[i, 1] = max(0, min(w - 1, bounds[i, 1]))
         bounds[i, 2] = max(0, min(h - 1, bounds[i, 2]))
+
+
+@njit("i8[:,:](i8[:,:])")
+def merge_bounds(bounds):
+    min_y = np.min(bounds[:, 2])
+    max_y = np.max(bounds[:, 2])
+
+    num_y = max_y - min_y + 1
+
+    merged = np.full(shape=(num_y, 3), fill_value=MIN_VALUE, dtype=np.int64)
+
+    merged[:, 2] = np.arange(min_y, max_y + 1)
+
+    for i in range(len(bounds)):
+        start, end, y = bounds[i]
+        j = y - min_y
+        current = merged[j]
+        if current[0] == MIN_VALUE:
+            merged[j, 0] = min(start, end)
+            merged[j, 1] = max(start, end)
+        else:
+            merged[j, 0] = min(start, end, current[0])
+            merged[j, 1] = max(start, end, current[1])
+
+    return merged

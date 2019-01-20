@@ -71,6 +71,9 @@ class Curve(Shape):
             raise Exception('Extremum value is not initialized. Call get_bounds first.')
         return self.extremum != self.points[0][1] and self.extremum != self.points[2][1]
 
+    def get_points(self, n):
+        return get_points_on_curve(self.points, n)
+
 
 @njit("i8(f8, i8, i8, i8)")
 def bezier(t, p0, p1, p2):
@@ -129,3 +132,21 @@ def rasterize_curve(points, size):
         prev_y = y
 
     return bounds[0:i], ext
+
+
+@njit("i8[:,:](i8[:,:], i8)")
+def get_points_on_curve(control_points, n):
+    x0, y0 = control_points[0]
+    x1, y1 = control_points[1]
+    x2, y2 = control_points[2]
+
+    ts = np.linspace(0, 1, n)
+    points = np.empty((n, 2), dtype=np.int64)
+
+    i = 0
+    for t in ts:
+        points[i, 0] = bezier(t, x0, x1, x2)
+        points[i, 1] = bezier(t, y0, y1, y2)
+        i += 1
+
+    return points

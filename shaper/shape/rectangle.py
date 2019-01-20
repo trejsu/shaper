@@ -3,10 +3,12 @@ import math
 import numpy as np
 from numba import njit
 
-from shaper.shape.shape import Shape, f
+from shaper.shape.shape import Shape, merge_bounds
 from shaper.util import timeit
+from .triangle import rasterize_triangle
 
 
+# todo: split to rectangle and quadrangle
 class Rectangle(Shape):
 
     def __init__(self, points, alpha):
@@ -65,7 +67,7 @@ class Rectangle(Shape):
 
     @timeit
     def get_bounds(self, h=None, w=None):
-        return rasterize_rectangle(self.points)
+        return rasterize_quadrangle(self.points)
 
     def get_alpha(self):
         return self.alpha
@@ -87,38 +89,11 @@ class Rectangle(Shape):
 
 
 @njit("i8[:,:](i8[:,:])")
-def rasterize_rectangle(points):
-    upper = np.argmin(points[:, 1])
-    lower = np.argmax(points[:, 1])
-    left = np.argmin(points[:, 0])
-    right = 6 - (upper + lower + left)
-
-    bounds = np.empty((points[lower][1] - points[upper][1], 3), dtype=np.int64)
-
-    i = 0
-    for y in range(points[upper][1], points[lower][1]):
-
-        if y < points[left][1]:
-            x1, y1 = points[upper]
-            x2, y2 = points[left]
-        else:
-            x1, y1 = points[left]
-            x2, y2 = points[lower]
-
-        start_x = f(x1, y1, x2, y2, y)
-
-        if y < points[right][1]:
-            x1, y1 = points[upper]
-            x2, y2 = points[right]
-        else:
-            x1, y1 = points[right]
-            x2, y2 = points[lower]
-
-        end_x = f(x1, y1, x2, y2, y)
-
-        bounds[i, 0] = start_x
-        bounds[i, 1] = end_x
-        bounds[i, 2] = y
-        i += 1
-
-    return bounds
+def rasterize_quadrangle(points):
+    bounds1 = rasterize_triangle(points[:-1])
+    bounds2 = rasterize_triangle(points[1:])
+    bounds1_len = bounds1.shape[0]
+    bounds = np.empty(shape=(bounds1_len + bounds2.shape[0], 3), dtype=np.int64)
+    bounds[:bounds1_len] = bounds1
+    bounds[bounds1_len:] = bounds2
+    return merge_bounds(bounds)
