@@ -112,7 +112,8 @@ class QuadrangleBrush(Brush):
         super().__init__(path=path, size=size, alpha=alpha)
 
     def get_bounds(self, h, w):
-        path_pixels = self.path.get_points(n=10)
+        num_path_pixels = 10
+        path_pixels = self.path.get_points(n=num_path_pixels)
 
         if path_pixels.shape[0] < 3:
             log.debug('Path pixels < 3, rectangle brush empty.')
@@ -121,9 +122,7 @@ class QuadrangleBrush(Brush):
 
         shapes = [Quadrangle.from_params(p, self.get_alpha) for p in points]
 
-        # todo: 100 is way too high
-        num_bounds = (100 * self.size) * len(shapes)
-
+        num_bounds = 10 * h * len(shapes)
         bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
 
         i = 0
