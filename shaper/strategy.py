@@ -23,7 +23,7 @@ class Strategy(object):
         self.rng = rng
 
     @abstractmethod
-    def ask(self):
+    def ask(self, scale):
         raise NotImplementedError
 
     @abstractmethod
@@ -34,26 +34,20 @@ class Strategy(object):
     def result(self):
         raise NotImplementedError
 
-    def _random_shape(self):
-        shape = self.rng.randint(5) if self.shape_mode == 0 else self.shape_mode - 1
-        return {
-            0: Triangle.random,
-            1: Rectangle.random,
-            2: Ellipse.random,
-            3: Quadrangle.random,
-            4: QuadrangleBrush.random,
-        }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng)
-
 
 class RandomStrategy(Strategy):
 
-    def __init__(self, n, w, h, alpha, rng, shape_mode=0):
+    def __init__(self, n, w, h, alpha, rng, shape_mode, decay):
         super().__init__(w, h, alpha, shape_mode, rng)
         self.n = n
         self.shapes = None
         self.scores = None
+        self.decay = decay
+        self.scale = 1
 
-    def ask(self):
+    def ask(self, action):
+        self.scale *= 1 / (1 + self.decay * action)
+        log.debug(f'Scale of random shapes = {self.scale}')
         self.shapes = [self._random_shape() for _ in range(self.n)]
         return self.shapes
 
@@ -63,6 +57,16 @@ class RandomStrategy(Strategy):
     def result(self):
         best = np.argmin(self.scores)
         return self.shapes[best], self.scores[best]
+
+    def _random_shape(self):
+        shape = self.rng.randint(5) if self.shape_mode == 0 else self.shape_mode - 1
+        return {
+            0: Triangle.random,
+            1: Rectangle.random,
+            2: Ellipse.random,
+            3: Quadrangle.random,
+            4: QuadrangleBrush.random,
+        }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng, scale=self.scale)
 
 
 class SimpleEvolutionStrategy(Strategy):
@@ -77,13 +81,13 @@ class SimpleEvolutionStrategy(Strategy):
         self.scores = None
         self.best = None
 
-    def ask(self):
+    def ask(self, scale=None):
         shapes = []
         for _ in range(self.n):
             params = [self.rng.normal(loc=mean, scale=sigma) for mean, sigma in
                       zip(self.mean, self.sigma)]
             shapes.append(self.shape.from_params(*params, self.alpha))
-        self.shapes = shapes
+            print(shapes)
         return self.shapes
 
     def tell(self, scores):
@@ -111,7 +115,7 @@ class EvolutionStrategy(Strategy):
         self.best = None
 
     @timeit
-    def ask(self):
+    def ask(self, scale=None):
         self.eps = self.rng.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
         for i in range(self.n):

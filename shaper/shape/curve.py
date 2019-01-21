@@ -18,7 +18,7 @@ class Curve(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha, rng):
+    def random(w, h, alpha, rng, scale=1):
         xs = rng.randint(w, size=(3, 1))
         ys = rng.randint(h, size=(3, 1))
         points = np.concatenate((xs, ys), axis=1)

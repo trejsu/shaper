@@ -19,8 +19,17 @@ def main():
     canvas, show = init()
     start = time.time()
 
+    random = RandomStrategy(
+        ARGS.random,
+        *canvas.size(),
+        alpha=ARGS.alpha,
+        shape_mode=ARGS.shape_mode,
+        rng=ARGS.rng,
+        decay=ARGS.scale_decay
+    )
+
     for i in range(1, ARGS.n + 1):
-        best_score, best_shape = find_best_random_shape(canvas)
+        best_score, best_shape = find_best_shape(canvas=canvas, strategy=random, action=i)
 
         strategy = pick_strategy(best_shape, canvas)
 
@@ -47,8 +56,8 @@ def main():
         print_times()
 
 
-def find_best_shape(canvas, strategy):
-    shapes = strategy.ask()
+def find_best_shape(canvas, strategy, action=None):
+    shapes = strategy.ask() if action is None else strategy.ask(action=action)
     scores = [canvas.evaluate(shape) for shape in shapes]
     strategy.tell(scores)
     shape, score = strategy.result()
@@ -114,21 +123,6 @@ def pick_strategy(best_shape, canvas):
     return strategy
 
 
-def find_best_random_shape(canvas):
-    random = RandomStrategy(
-        ARGS.random,
-        *canvas.size(),
-        alpha=ARGS.alpha,
-        shape_mode=ARGS.shape_mode,
-        rng=ARGS.rng
-    )
-    shapes = random.ask()
-    scores = [canvas.evaluate(shape) for shape in shapes]
-    random.tell(scores)
-    best_shape, best_score = random.result()
-    return best_score, best_shape
-
-
 def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
 
@@ -163,6 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--time', action='store_true', default=False)
     parser.add_argument('--seed', type=int)
     parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
+    parser.add_argument('--scale-decay', type=float, default=0.0003)
     ARGS = parser.parse_args()
 
     seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)

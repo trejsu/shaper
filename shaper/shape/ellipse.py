@@ -19,7 +19,7 @@ class Ellipse(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha, rng):
+    def random(w, h, alpha, rng, scale=1):
         center_x = rng.randint(w)
         center_y = rng.randint(h)
         a = rng.randint(1, w)

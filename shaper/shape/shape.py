@@ -9,7 +9,7 @@ from shaper.util import timeit, MIN_VALUE
 class Shape(object):
     @staticmethod
     @abstractmethod
-    def random(w, h, alpha, rng):
+    def random(w, h, alpha, rng, scale):
         raise NotImplementedError
 
     @staticmethod

@@ -22,7 +22,7 @@ class Brush(Shape):
 
     @classmethod
     @timeit
-    def random(cls, w, h, alpha, rng):
+    def random(cls, w, h, alpha, rng, scale=1):
         path = Curve.random(w=w, h=h, alpha=alpha, rng=rng)
         size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE)
         return cls(path=path, size=size, alpha=alpha)

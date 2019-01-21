@@ -19,7 +19,7 @@ class Quadrangle(Shape):
             f'D={self.points[3]})'
 
     @staticmethod
-    def random(w, h, alpha, rng):
+    def random(w, h, alpha, rng, scale=1):
         r = rng.randint(min(w, h) // 2)
         cx = rng.randint(w)
         cy = rng.randint(h)
@@ -79,7 +79,7 @@ class Rectangle(Shape):
 
     @staticmethod
     @timeit
-    def random(w, h, alpha, rng):
+    def random(w, h, alpha, rng, scale=1):
         cx = rng.randint(w)
         cy = rng.randint(h)
         w = rng.randint(1, w)
