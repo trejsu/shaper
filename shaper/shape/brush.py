@@ -23,8 +23,8 @@ class Brush(Shape):
     @classmethod
     @timeit
     def random(cls, w, h, alpha, rng, scale=1):
-        path = Curve.random(w=w, h=h, alpha=alpha, rng=rng)
-        size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE)
+        path = Curve.random(w=w, h=h, alpha=alpha, rng=rng, scale=scale)
+        size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE) * scale
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
@@ -122,7 +122,7 @@ class QuadrangleBrush(Brush):
 
         shapes = [Quadrangle.from_params(p, self.get_alpha) for p in points]
 
-        num_bounds = 10 * h * len(shapes)
+        num_bounds = 11 * h * len(shapes)
         bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
 
         i = 0
