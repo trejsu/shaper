@@ -21,6 +21,9 @@ class Triangle(Shape):
         ys = rng.randint(h, size=(3, 1))
         points = np.concatenate((xs, ys), axis=1)
         assert points.shape == (3, 2), f'Shape of points: {points.shape}, expected: (3, 2)'
+        center = np.sum(points, axis=0) / 3
+        random_shift = [rng.randint(w), rng.randint(h)]
+        points = scale * (points - center) + random_shift
         return Triangle(points, alpha)
 
     @staticmethod
