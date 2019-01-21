@@ -85,10 +85,10 @@ class Rectangle(Shape):
     def random(w, h, alpha, rng, scale=1):
         cx = rng.randint(w)
         cy = rng.randint(h)
-        w = rng.randint(1, w)
-        h = rng.randint(1, h)
+        rw = rng.randint(1, w) * scale
+        rh = rng.randint(1, h) * scale
         rot = rng.uniform(0, math.pi)
-        return Rectangle(cx=cx, cy=cy, w=w, h=h, rotation=rot, alpha=alpha)
+        return Rectangle(cx=cx, cy=cy, w=rw, h=rh, rotation=rot, alpha=alpha)
 
     @staticmethod
     @timeit

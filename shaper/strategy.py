@@ -7,6 +7,7 @@ from shaper.shape.brush import QuadrangleBrush, Quadrangle
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.quadrangle import Rectangle
 from shaper.shape.triangle import Triangle
+from shaper.shape.curve import Curve
 from shaper.util import normalize
 from .util import timeit
 
@@ -59,13 +60,14 @@ class RandomStrategy(Strategy):
         return self.shapes[best], self.scores[best]
 
     def _random_shape(self):
-        shape = self.rng.randint(5) if self.shape_mode == 0 else self.shape_mode - 1
+        shape = self.rng.randint(6) if self.shape_mode == 0 else self.shape_mode - 1
         return {
             0: Triangle.random,
             1: Rectangle.random,
             2: Ellipse.random,
             3: Quadrangle.random,
             4: QuadrangleBrush.random,
+            5: Curve.random,
         }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng, scale=self.scale)
 
 
