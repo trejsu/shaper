@@ -28,6 +28,9 @@ class Quadrangle(Shape):
         ys = [cy + r * math.sin(angle) for angle in angles]
         points = np.concatenate((np.array(xs).reshape(4, 1), np.array(ys).reshape(4, 1)), axis=1)
         assert points.shape == (4, 2), f'Shape of points: {points.shape}, expected: (4, 2)'
+        center = np.sum(points, axis=0) / 4
+        random_shift = [rng.randint(w), rng.randint(h)]
+        points = scale * (points - center) + random_shift
         return Quadrangle(points, alpha)
 
     @staticmethod
