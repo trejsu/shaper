@@ -45,7 +45,8 @@ class Curve(Shape):
 
     @timeit
     def get_bounds(self, h=None, w=None):
-        bounds, self.extremum = rasterize_curve(self.points, 0)
+        bounds, self.extremum = rasterize_curve(self.points)
+        # todo: remove if unused
         self.num_bounds = bounds.shape[0]
         return bounds
 
@@ -68,6 +69,7 @@ class Curve(Shape):
     def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
 
+    # todo: remove if unused
     @timeit
     def has_doubled_ys(self):
         if self.extremum is None:
@@ -101,8 +103,8 @@ def extremum(p0, p1, p2):
     return bezier(a / b, p0, p1, p2)
 
 
-@njit("Tuple((i8[:,:], i8))(i8[:,:], i8)")
-def rasterize_curve(points, size):
+@njit("Tuple((i8[:,:], i8))(i8[:,:])")
+def rasterize_curve(points):
     x0, y0 = points[0]
     x1, y1 = points[1]
     x2, y2 = points[2]
@@ -124,16 +126,17 @@ def rasterize_curve(points, size):
         y = bezier(t, y0, y1, y2)
 
         if y == prev_y:
-            bounds[i - 1, 0] = min(bounds[i - 1, 0], x - size)
-            bounds[i - 1, 1] = max(bounds[i - 1, 1], x + size)
+            bounds[i - 1, 0] = min(bounds[i - 1, 0], x)
+            bounds[i - 1, 1] = max(bounds[i - 1, 1], x)
         else:
-            bounds[i, 0] = x - size
-            bounds[i, 1] = x + size
+            bounds[i, 0] = x
+            bounds[i, 1] = x
             bounds[i, 2] = y
             i += 1
 
         prev_y = y
 
+    # todo: remove returning extremum if unused
     return bounds[0:i], ext
 
 

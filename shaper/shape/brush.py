@@ -69,7 +69,7 @@ class Brush(Shape):
     def __str__(self):
         return f'Brush(path={self.path}, size={self.size})'
 
-
+# todo: remove
 class EllipseBrush(Brush):
 
     def __init__(self, path, size, alpha):
@@ -119,6 +119,13 @@ class QuadrangleBrush(Brush):
             log.debug('Path pixels < 3, rectangle brush empty.')
             return np.empty(shape=(0, 3), dtype=np.int64)
         points = generate_quadrangle_points(path_pixels, self.size)
+
+        # todo: decide whats better
+        # shapes = [Quadrangle.without_edge(
+        #     points=p,
+        #     edge=[0, 1],
+        #     alpha=self.get_alpha
+        # ) for p in points]
 
         shapes = [Quadrangle.from_params(p, self.get_alpha) for p in points]
 
@@ -197,7 +204,7 @@ def merge_bounds_for_simple_path(bounds):
     return merged
 
 
-# todo: fix/finish/reimplement
+# todo: fix/finish/reimplement/remove
 @njit("i8[:,:](i8[:,:], i8, i8, i8)")
 def merge_bounds_for_curved_path(bounds, path_extremum, path_num_bounds, size):
     min_y = np.min(bounds[:, 2])

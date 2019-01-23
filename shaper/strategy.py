@@ -4,10 +4,10 @@ from abc import abstractmethod
 import numpy as np
 
 from shaper.shape.brush import QuadrangleBrush, Quadrangle
+from shaper.shape.curve import Curve
 from shaper.shape.ellipse import Ellipse
 from shaper.shape.quadrangle import Rectangle
 from shaper.shape.triangle import Triangle
-from shaper.shape.curve import Curve
 from shaper.util import normalize
 from .util import timeit
 
@@ -67,7 +67,7 @@ class RandomStrategy(Strategy):
             2: Ellipse.random,
             3: Quadrangle.random,
             4: QuadrangleBrush.random,
-            5: Curve.random,
+            5: Curve.random,  # todo: choose only if resize == output size ?
         }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng, scale=self.scale)
 
 

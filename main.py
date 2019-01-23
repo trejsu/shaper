@@ -148,7 +148,7 @@ if __name__ == '__main__':
                                  'adam'], default='adam')
     parser.add_argument('--shape-mode', type=int,
                         help='Shape mode: 0 - all, 1 - triangle, 2 - rectangle, 3 - ellipse, '
-                             '4 - quadrangle', choices=[0, 1, 2, 3, 4], default=0)
+                             '4 - quadrangle, 5 - brush', choices=[0, 1, 2, 3, 4, 5], default=0)
     parser.add_argument('--resize', type=int,
                         help='Size to which input will be scaled before drawing - the bigger the '
                              'longer it will take but the more details can be captured',

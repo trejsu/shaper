@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numba import njit
 
-from shaper.shape.shape import Shape, merge_bounds
+from shaper.shape.shape import Shape, merge_bounds, f
 from shaper.util import timeit
 from .triangle import rasterize_triangle
 
@@ -14,7 +14,7 @@ class Quadrangle(Shape):
         self.points = points.astype(np.int64)
         self.alpha = alpha
 
-    def __str__(self):
+    def __repr__(self):
         return f'Quadrangle(A={self.points[0]}, B={self.points[1]}, C={self.points[2]}, ' \
             f'D={self.points[3]})'
 
@@ -48,6 +48,11 @@ class Quadrangle(Shape):
         )
 
     @staticmethod
+    def without_edge(points, edge, alpha):
+        remove_edge(points=points, edge=edge)
+        return Quadrangle(points=points, alpha=alpha)
+
+    @staticmethod
     def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h, w, h])
 
@@ -77,7 +82,7 @@ class Rectangle(Shape):
         self.rotation = rotation
         self.alpha = alpha
 
-    def __str__(self):
+    def __repr__(self):
         return f'Rectangle(cx={self.cx}, cy={self.cy}, w={self.w}, h={self.h}, rotation={self.rotation})'
 
     @staticmethod
@@ -176,3 +181,27 @@ def rasterize_rectangle(cx, cy, w, h, rot):
     points[2] = x3, y3
     points[3] = x4, y4
     return rasterize_quadrangle(points)
+
+
+# todo: add numba
+# todo: what will happen when all quadrangle is one edge?
+def remove_edge(points, edge):
+    foo(points, edge[0], (edge[0] + 3) % 4)
+    foo(points, edge[1], (edge[1] + 1) % 4)
+
+
+def foo(points, index_start, index_end):
+    start = points[index_start]
+    end = points[index_end]
+    sign = start - end
+    if sign[1] > 0:
+        new_y = start[1] - 1
+        new_x = f(start[0], start[1], end[0], end[1], new_y)
+    elif sign[1] < 0:
+        new_y = start[1] + 1
+        new_x = f(start[0], start[1], end[0], end[1], new_y)
+    else:
+        new_y = start[1]
+        new_x = start[0] + 1 if sign[0] < 0 else start[0] - 1
+    points[index_start, 0] = new_x
+    points[index_start, 1] = new_y
