@@ -68,17 +68,25 @@ class Triangle(Shape):
 
 @njit("i8[:,:](i8[:,:])")
 def rasterize_triangle(points):
-    upper = np.argmin(points[:, 1:])
-    lower = np.argmax(points[:, 1:])
+    upper = np.argmin(points[:, 1])
+    lower = np.argmax(points[:, 1])
 
     upper_point = points[upper]
     lower_point = points[lower]
+
+    if upper == lower:
+        bounds = np.empty((1, 3), dtype=np.int64)
+        bounds[0, 0] = np.min(points[:, 0])
+        bounds[0, 1] = np.max(points[:, 1])
+        bounds[0, 2] = points[0, 1]
+        return bounds
+
     third_point = points[3 - (upper + lower)]
 
-    bounds = np.empty((lower_point[1] - upper_point[1], 3), dtype=np.int64)
+    bounds = np.empty((lower_point[1] - upper_point[1] + 1, 3), dtype=np.int64)
 
     i = 0
-    for y in range(upper_point[1], lower_point[1]):
+    for y in range(upper_point[1], lower_point[1] + 1):
         start_x = f(upper_point[0], upper_point[1], lower_point[0], lower_point[1], y)
 
         if y < third_point[1]:
@@ -88,9 +96,14 @@ def rasterize_triangle(points):
             x1, y1 = third_point
             x2, y2 = lower_point
 
-        end_x = f(x1, y1, x2, y2, y)
-        bounds[i, 0] = start_x
-        bounds[i, 1] = end_x
+        if y1 == y2:
+            bounds[i, 0] = start_x
+            bounds[i, 1] = third_point[0]
+        else:
+            end_x = f(x1, y1, x2, y2, y)
+            bounds[i, 0] = start_x
+            bounds[i, 1] = end_x
+
         bounds[i, 2] = y
         i += 1
 

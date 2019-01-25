@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numba import njit
 
-from shaper.shape.shape import Shape, merge_bounds, f
+from shaper.shape.shape import Shape, merge_bounds
 from shaper.util import timeit
 from .triangle import rasterize_triangle
 
@@ -183,25 +183,26 @@ def rasterize_rectangle(cx, cy, w, h, rot):
     return rasterize_quadrangle(points)
 
 
-# todo: add numba
-# todo: what will happen when all quadrangle is one edge?
+@njit("(i8[:,:],i8[:])")
 def remove_edge(points, edge):
-    foo(points, edge[0], (edge[0] + 3) % 4)
-    foo(points, edge[1], (edge[1] + 1) % 4)
+    move_point(points, edge[0], (edge[0] + 3) % 4)
+    move_point(points, edge[1], (edge[1] + 1) % 4)
 
 
-def foo(points, index_start, index_end):
+def move_point(points, index_start, index_end):
     start = points[index_start]
     end = points[index_end]
     sign = start - end
-    if sign[1] > 0:
-        new_y = start[1] - 1
-        new_x = f(start[0], start[1], end[0], end[1], new_y)
-    elif sign[1] < 0:
-        new_y = start[1] + 1
-        new_x = f(start[0], start[1], end[0], end[1], new_y)
-    else:
+
+    if sign[1] == 0 or abs(sign[0]) > abs(sign[1]):
         new_y = start[1]
         new_x = start[0] + 1 if sign[0] < 0 else start[0] - 1
+    elif sign[1] > 0:
+        new_y = start[1] - 1
+        new_x = start[0]
+    else:
+        new_y = start[1] + 1
+        new_x = start[0]
+
     points[index_start, 0] = new_x
     points[index_start, 1] = new_y
