@@ -49,7 +49,7 @@ class Quadrangle(Shape):
 
     @staticmethod
     def without_edge(points, edge, alpha):
-        remove_edge(points=points, edge=edge)
+        remove_edge(points=points, edge=np.array(edge))
         return Quadrangle(points=points, alpha=alpha)
 
     @staticmethod
@@ -183,12 +183,7 @@ def rasterize_rectangle(cx, cy, w, h, rot):
     return rasterize_quadrangle(points)
 
 
-@njit("(i8[:,:],i8[:])")
-def remove_edge(points, edge):
-    move_point(points, edge[0], (edge[0] + 3) % 4)
-    move_point(points, edge[1], (edge[1] + 1) % 4)
-
-
+@njit("(i8[:,:],i8,i8)")
 def move_point(points, index_start, index_end):
     start = points[index_start]
     end = points[index_end]
@@ -206,3 +201,9 @@ def move_point(points, index_start, index_end):
 
     points[index_start, 0] = new_x
     points[index_start, 1] = new_y
+
+
+@njit("(i8[:,:],i8[:])")
+def remove_edge(points, edge):
+    move_point(points, edge[0], (edge[0] + 3) % 4)
+    move_point(points, edge[1], (edge[1] + 1) % 4)

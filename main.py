@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--time', action='store_true', default=False)
     parser.add_argument('--seed', type=int)
     parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
-    parser.add_argument('--scale-decay', type=float, default=0.0003)
+    parser.add_argument('--scale-decay', type=float, default=0.0001)
     ARGS = parser.parse_args()
 
     seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)
