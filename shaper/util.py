@@ -1,6 +1,7 @@
 import time
 from collections import defaultdict
 
+import matplotlib.image as mimg
 import numpy as np
 from PIL import Image
 from numba import njit
@@ -111,3 +112,11 @@ def print_times():
     sorted_times = sorted(times.items(), key=operator.itemgetter(1))
     for name, t in sorted_times:
         print(f'{name}: {t:.2f}ms (calls = {calls[name]}, mean = {mean_times[name]:.2f}ms)')
+
+
+def read_img(path):
+    img = mimg.imread(path)
+    if np.all(img <= 1):
+        img *= 255
+        img = img.astype('uint8')
+    return img[:, :, :3]

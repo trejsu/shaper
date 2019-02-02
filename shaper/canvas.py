@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full
+from shaper.util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full, read_img
 from .util import timeit
 
 matplotlib.use("TkAgg")
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class Canvas(object):
     def __init__(self, target, size, output_size, num_shapes, metric):
         self.target_path = target
-        self.target = resize_to_size(img=mimg.imread(target)[:, :, :3], size=size).astype(np.float)
+        self.target = resize_to_size(img=read_img(target), size=size).astype(np.float)
         self.img = np.full(self.target.shape, average_color(self.target), dtype=np.float)
         self.distance = (l1_full if metric == 'l1' else l2_full)(target=self.target, x=self.img)
         self.output_size = output_size
@@ -75,7 +75,7 @@ class Canvas(object):
     @timeit
     def save(self, output):
         target = resize_to_size(
-            img=mimg.imread(self.target_path)[:, :, :3],
+            img=read_img(self.target_path),
             size=self.output_size
         ).astype(np.float)
 
@@ -121,3 +121,5 @@ class Canvas(object):
 
     def _showable_img(self):
         return np.concatenate((self.target / 255, self.img / 255), axis=1)
+
+

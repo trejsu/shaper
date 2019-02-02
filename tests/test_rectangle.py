@@ -28,10 +28,10 @@ def test_normalized_params():
 
 @pytest.mark.parametrize(
     "edge_start, edge_end, start_new_x_sign, start_new_y_sign, end_new_x_sign, end_new_y_sign", [
-        (0, 1, 1, -1, 1, -1),
-        (1, 2, -1, 1, 1, 1),
-        (2, 3, -1, 1, -1, 1),
-        (3, 0, -1, -1, 0, -1)
+        (0, 1, 1, 0, 1, 0),
+        (1, 2, 0, 1, 1, 0),
+        (2, 3, -1, 0, -1, 0),
+        (3, 0, -1, 0, 0, -1)
     ])
 def test_without_edge(edge_start, edge_end, start_new_x_sign, start_new_y_sign, end_new_x_sign,
     end_new_y_sign):

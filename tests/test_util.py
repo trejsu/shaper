@@ -2,7 +2,9 @@ import numpy as np
 import pytest
 
 from shaper.shape.quadrangle import Quadrangle
-from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels
+from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img
+from config import ROOT_DIR
+import os
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -136,3 +138,17 @@ def test_bounds_to_pixels_start_x_bigger_than_end_x():
     )
     pixels = bounds_to_pixels(bounds)
     assert np.array_equal(pixels, expected_pixels)
+
+
+def test_read_img_jpg():
+    path = os.path.join(ROOT_DIR, 'data/tree/tree.jpg')
+    img = read_img(path)
+    assert img.shape[2] == 3
+    assert np.any(img > 1)
+
+
+def test_read_img_png():
+    path = os.path.join(ROOT_DIR, 'data/mnist/mnist-1.png')
+    img = read_img(path)
+    assert img.shape[2] == 3
+    assert np.any(img > 1)
