@@ -80,16 +80,8 @@ def extremum(p0, p1, p2):
     a = p0 - p1
     b = p0 - 2 * p1 + p2
 
-    if a == 0:
+    if a == 0 or np.sign(a) != np.sign(b) or b == 0 or abs(a) > abs(b):
         return p0
-    if np.sign(a) != np.sign(b):
-        return p0
-    if b == 0:
-        return p0
-    if abs(a) > abs(b):
-        print('abs(a) > abs(b)')
-        # todo: shouldnt it be p2???
-        return p1
     return bezier(a / b, p0, p1, p2)
 
 
