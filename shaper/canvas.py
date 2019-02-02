@@ -98,6 +98,10 @@ class Canvas(object):
         mimg.imsave(output, img.astype(np.uint8))
 
     @timeit
+    def save_nth(self, output):
+        mimg.imsave(output, self.img.astype(np.uint8))
+
+    @timeit
     def evaluate(self, shape):
         score = self.add(shape)
         self.undo()

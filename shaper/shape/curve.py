@@ -10,8 +10,6 @@ class Curve(Shape):
     def __init__(self, points, alpha):
         self.points = points.astype(np.int64)
         self.alpha = alpha
-        self.extremum = None
-        self.num_bounds = None
 
     def __str__(self):
         return f'Curve(P0={self.points[0]}, P1={self.points[1]}, P2={self.points[2]})'
@@ -45,10 +43,7 @@ class Curve(Shape):
 
     @timeit
     def get_bounds(self, h=None, w=None):
-        bounds, self.extremum = rasterize_curve(self.points)
-        # todo: remove if unused
-        self.num_bounds = bounds.shape[0]
-        return bounds
+        return rasterize_curve(self.points)
 
     def get_alpha(self):
         return self.alpha
@@ -68,13 +63,6 @@ class Curve(Shape):
     @timeit
     def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
-
-    # todo: remove if unused
-    @timeit
-    def has_doubled_ys(self):
-        if self.extremum is None:
-            raise Exception('Extremum value is not initialized. Call get_bounds first.')
-        return self.extremum != self.points[0][1] and self.extremum != self.points[2][1]
 
     def get_points(self, n):
         return get_points_on_curve(self.points, n)
@@ -99,11 +87,13 @@ def extremum(p0, p1, p2):
     if b == 0:
         return p0
     if abs(a) > abs(b):
+        print('abs(a) > abs(b)')
+        # todo: shouldnt it be p2???
         return p1
     return bezier(a / b, p0, p1, p2)
 
 
-@njit("Tuple((i8[:,:], i8))(i8[:,:])")
+@njit("i8[:,:](i8[:,:])")
 def rasterize_curve(points):
     x0, y0 = points[0]
     x1, y1 = points[1]
@@ -136,8 +126,7 @@ def rasterize_curve(points):
 
         prev_y = y
 
-    # todo: remove returning extremum if unused
-    return bounds[0:i], ext
+    return bounds[0:i]
 
 
 @njit("i8[:,:](i8[:,:], i8)")

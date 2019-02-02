@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from numba import njit
 
-from shaper.util import MIN_VALUE, timeit
+from shaper.util import timeit
 from .curve import Curve
 from .quadrangle import Quadrangle
 from .shape import Shape
@@ -89,9 +89,7 @@ class QuadrangleBrush(Brush):
             alpha=self.get_alpha
         ) for p in points]
 
-        # shapes = [Quadrangle.from_params(p, self.get_alpha) for p in points]
-
-        num_bounds = 12 * h * len(shapes)
+        num_bounds = 28 * h * len(shapes)
         bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
 
         i = 0
@@ -139,28 +137,3 @@ def generate_quadrangle_points(path_points, size):
         points[i, 3] = left[i + 1]
 
     return points
-
-
-@njit("i8[:,:](i8[:,:])")
-def merge_bounds_for_simple_path(bounds):
-    min_y = np.min(bounds[:, 2])
-    max_y = np.max(bounds[:, 2])
-
-    num_y = max_y - min_y + 1
-
-    merged = np.full(shape=(num_y, 3), fill_value=MIN_VALUE, dtype=np.int64)
-
-    merged[:, 2] = np.arange(min_y, max_y + 1)
-
-    for i in range(len(bounds)):
-        start, end, y = bounds[i]
-        j = y - min_y
-        current = merged[j]
-        if current[0] == MIN_VALUE:
-            merged[j, 0] = start
-            merged[j, 1] = end
-        else:
-            merged[j, 0] = min(start, end, current[0])
-            merged[j, 1] = max(start, end, current[1])
-
-    return merged

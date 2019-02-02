@@ -11,7 +11,8 @@ from shaper.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta
 from shaper.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 
 ARGS = None
-RESULTS = os.path.join(ROOT_DIR, 'result/evolution-strategies-experiments/growing-step-results.csv')
+RESULTS = os.path.join(ROOT_DIR,
+                       'result/evolution-strategies-classification-experiments/results.csv')
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -21,13 +22,22 @@ def main():
     canvas, show, initial_score = init()
     start = time.time()
 
+    random = RandomStrategy(
+        ARGS.random,
+        *canvas.size(),
+        alpha=ARGS.alpha,
+        shape_mode=ARGS.shape_mode,
+        rng=ARGS.rng,
+        decay=ARGS.scale_decay
+    )
+
     scores = np.empty(shape=(ARGS.n + 1,))
     scores[0] = initial_score
 
-    canvas.save(ARGS.output % 0)
+    canvas.save_nth(ARGS.output % 0)
 
     for i in range(1, ARGS.n + 1):
-        best_score, best_shape = find_best_random_shape(canvas)
+        best_score, best_shape = find_best_shape(canvas=canvas, strategy=random, action=i)
 
         strategy = pick_strategy(best_shape, canvas)
 
@@ -42,7 +52,7 @@ def main():
         log.info(f'Action {i}, new score: {score:.4f}')
         show()
         scores[i] = score
-        canvas.save(ARGS.output % i)
+        canvas.save_nth(ARGS.output % i)
 
     elapsed = time.time() - start
     shapes_drawn = ARGS.n * (ARGS.step * ARGS.sample + ARGS.random)
@@ -51,13 +61,11 @@ def main():
 
     with open(RESULTS, "a") as csv:
         for i, score in enumerate(scores):
-            csv.write(f'{i},{ARGS.output % i},{ARGS.random},{ARGS.sample},{ARGS.step},'
-                      f'{ARGS.learning_rate},{ARGS.sigma_factor},{ARGS.algorithm},{ARGS.optimizer},'
-                      f'{score},{elapsed}\n')
+            csv.write(f'{i},{ARGS.output % i},{score},{elapsed}\n')
 
 
-def find_best_shape(canvas, strategy):
-    shapes = strategy.ask()
+def find_best_shape(canvas, strategy, action=None):
+    shapes = strategy.ask() if action is None else strategy.ask(action=action)
     scores = [canvas.evaluate(shape) for shape in shapes]
     strategy.tell(scores)
     shape, score = strategy.result()
@@ -69,7 +77,8 @@ def init():
         target=ARGS.input,
         size=ARGS.resize,
         output_size=ARGS.output_size,
-        num_shapes=ARGS.n
+        num_shapes=ARGS.n,
+        metric=ARGS.metric
     )
     show = show_function(canvas)
     score = canvas.init()
@@ -100,7 +109,8 @@ def pick_strategy(best_shape, canvas):
                 initial_params=best_shape.params(),
                 learning_rate=ARGS.learning_rate
             ),
-            shape_mode=ARGS.shape_mode
+            shape_mode=ARGS.shape_mode,
+            rng=ARGS.rng
         )
     elif ARGS.algorithm == 'simple':
         strategy = SimpleEvolutionStrategy(
@@ -109,29 +119,17 @@ def pick_strategy(best_shape, canvas):
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
-            shape_mode=ARGS.shape_mode
+            shape_mode=ARGS.shape_mode,
+            rng=ARGS.rng
         )
     else:
         strategy = RandomStrategy(
             ARGS.sample,
             *canvas.size(),
-            alpha=ARGS.alpha
+            alpha=ARGS.alpha,
+            rng=ARGS.rng
         )
     return strategy
-
-
-def find_best_random_shape(canvas):
-    random = RandomStrategy(
-        ARGS.random,
-        *canvas.size(),
-        alpha=ARGS.alpha,
-        shape_mode=ARGS.shape_mode
-    )
-    shapes = random.ask()
-    scores = [canvas.evaluate(shape) for shape in shapes]
-    random.tell(scores)
-    best_shape, best_score = random.result()
-    return best_score, best_shape
 
 
 def show_function(canvas):
@@ -159,6 +157,21 @@ if __name__ == '__main__':
                                  'adam'], default='adam')
     parser.add_argument('--shape-mode', type=int,
                         help='Shape mode: 0 - all, 1 - triangle, 2 - rectangle, 3 - ellipse, '
-                             '4 - curve', choices=[0, 1, 2, 3, 4], default=0)
+                             '4 - quadrangle, 5 - brush', choices=[0, 1, 2, 3, 4, 5], default=0)
+    parser.add_argument('--resize', type=int,
+                        help='Size to which input will be scaled before drawing - the bigger the '
+                             'longer it will take but the more details can be captured',
+                        default=100)
+    parser.add_argument('--output-size', type=int, help='Output image size', default=512)
+    parser.add_argument('--time', action='store_true', default=False)
+    parser.add_argument('--seed', type=int)
+    parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
+    parser.add_argument('--scale-decay', type=float, default=0.0001)
     ARGS = parser.parse_args()
+
+    seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)
+    rng = np.random.RandomState(seed=seed)
+    log.info(f'Rng seed = {seed}')
+    ARGS.rng = rng
+
     main()
