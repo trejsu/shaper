@@ -14,19 +14,36 @@ CSV_HEADERS = 'path,name,n,top1_class,top1_percent,top2_class,top2_percent,top3_
               'top4_percent,top5_class,top5_percent'
 DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} --output-size {}\n'
 DARKNET_CMD_TEMPLATE = 'printf \'{}\' | ./darknet classifier predict cfg/imagenet1k.data cfg/darknet19.cfg ' \
-                       'darknet19.weights > /tmp/darknet-output.txt'
+                       'darknet19.weights | sed \'s/Enter Image Path: //\' > /tmp/darknet-output.txt'
+DARKNET_OUTPUT_PATH = '/tmp/darknet-output.txt'
 
 
 def main():
-    num_images = prepare_commands_for_drawing()
+    num_images = draw()
+    drawings = classify_images(img_dir=ARGS.drawings_dir, num=num_images * ARGS.n)
+    write_drawings_classification_results_to_csv(drawings)
+    originals = classify_images(img_dir=ARGS.images_dir, num=num_images)
+    write_originals_classification_results_to_csv(originals)
+    log.info(f'Results saved under {ARGS.result_csv_path}')
 
+
+def classify_images(img_dir, num):
+    images = os.listdir(img_dir)
+    log.info(f'Found {len(images)} images, should be {num}')
+    classify(images=images, images_dir=img_dir)
+    return images
+
+
+def draw():
+    num_images = prepare_commands_for_drawing()
     parallel_cmd = f'parallel -j {ARGS.cpu} < {COMMANDS_PATH}'
     log.info('Starting drawing...')
     os.system(parallel_cmd)
     log.info('Drawing completed')
+    return num_images
 
-    classify(num_images)
 
+def write_drawings_classification_results_to_csv(drawings):
     if os.path.exists(ARGS.result_csv_path):
         old_results = ARGS.result_csv_path + '.old'
         log.warning(f'Found old csv with results, renaming to {old_results}')
@@ -34,17 +51,54 @@ def main():
 
     with open(ARGS.result_csv_path, "a") as csv:
         csv.write(f'{CSV_HEADERS}\n')
+        write_drawings_results(csv, drawings)
 
 
-def classify(num_images):
-    drawings = os.listdir(ARGS.drawings_dir)
-    log.info(f'Found {len(drawings)} drawings, should be {num_images * ARGS.n}')
+def write_drawings_results(csv, drawings):
+    top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
+        extract_results()
+    for i in range(len(drawings)):
+        drawing = drawings[i]
+        path = os.path.join(ARGS.drawings_dir, drawing)
+        name = drawing.split('-')[0]
+        n = drawing.split('-')[1].split('.')[0]
+        csv_line = ','.join([path, name, n, top1_cls[i], top1_perc[i], top2_cls[i], top2_perc[i], top3_cls[i],
+                             top3_perc[i], top4_cls[i], top4_perc[i], top5_cls[i], top5_perc[i]]) + '\n'
+        csv.write(csv_line)
 
-    drawings_string = ''
-    for drawing in drawings:
-        drawings_string += os.path.join(ARGS.drawings_dir, drawing) + '\n'
 
-    darknet_cmd = DARKNET_CMD_TEMPLATE.format(drawings_string)
+def extract_results():
+    with open(DARKNET_OUTPUT_PATH, "r") as darknet_output:
+        darknet = darknet_output.readlines()
+    percentages = [line.split('%')[0].strip() for line in darknet]
+    classes = [line.split(': ')[1][:-1] for line in darknet]
+    assert len(percentages) % 5 == 0
+    assert len(classes) % 5 == 0
+    return classes[0::5], percentages[0::5], classes[1::5], percentages[1::5], classes[2::5], percentages[2::5], \
+           classes[3::5], percentages[3::5], classes[4::5], percentages[4::5]
+
+
+def write_originals_classification_results_to_csv(originals):
+    top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
+        extract_results()
+
+    with open(ARGS.result_csv_path, "a") as csv:
+        for i in range(len(originals)):
+            img = originals[i]
+            path = os.path.join(ARGS.images_dir, img)
+            name = img.split('.')[0]
+            n = '0'
+            csv_line = ','.join([path, name, n, top1_cls[i], top1_perc[i], top2_cls[i], top2_perc[i], top3_cls[i],
+                                 top3_perc[i], top4_cls[i], top4_perc[i], top5_cls[i], top5_perc[i]]) + '\n'
+            csv.write(csv_line)
+
+
+def classify(images, images_dir):
+    images_string = ''
+    for drawing in images:
+        images_string += os.path.join(images_dir, drawing) + '\n'
+
+    darknet_cmd = DARKNET_CMD_TEMPLATE.format(images_string)
     log.info(f'Command to classify images: {darknet_cmd}')
 
     log.info('Starting classification...')
