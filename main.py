@@ -43,13 +43,14 @@ def main():
         score = canvas.add(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
         show()
-
+        if save_every_action():
+            canvas.save(ARGS.output % i)
     elapsed = time.time() - start
     shapes_drawn = ARGS.n * (ARGS.step * ARGS.sample + ARGS.random)
     log.info(f'Total shapes drawn {shapes_drawn}, time {elapsed:.2f} s, '
              f'({shapes_drawn / elapsed:.1f} shapes/s)')
 
-    if ARGS.output is not None:
+    if save_final():
         canvas.save(ARGS.output)
 
     if ARGS.time:
@@ -125,6 +126,14 @@ def pick_strategy(best_shape, canvas):
 
 def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
+
+
+def save_every_action():
+    return ARGS.output is not None and '%d' in ARGS.output
+
+
+def save_final():
+    return ARGS.output is not None and '%d' not in ARGS.output
 
 
 if __name__ == '__main__':

@@ -87,7 +87,11 @@ class Canvas(object):
 
         assert img.shape == target.shape
 
-        for cls, normalized_params in self.shapes:
+        for s in self.shapes:
+            if s is None:
+                break
+            else:
+                cls, normalized_params = s
             shape = cls.from_normalized_params(
                 img.shape[1],
                 img.shape[0],
