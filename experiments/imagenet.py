@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import time
 
 ARGS = None
 
@@ -16,9 +17,11 @@ DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} 
 DARKNET_CMD_TEMPLATE = 'printf \'{}\' | ./darknet classifier predict cfg/imagenet1k.data cfg/darknet19.cfg ' \
                        'darknet19.weights | sed \'s/Enter Image Path: //\' > /tmp/darknet-output.txt'
 DARKNET_OUTPUT_PATH = '/tmp/darknet-output.txt'
+TIME_PATH = '/tmp/imagenet-start-time'
 
 
 def main():
+    save_start_time()
     num_images = draw()
     drawings = classify_images(img_dir=ARGS.drawings_dir, num=num_images * ARGS.n)
     write_drawings_classification_results_to_csv(drawings)
@@ -124,6 +127,14 @@ def prepare_commands_for_drawing():
                 DRAW_CMD_TEMPLATE.format(shaper_main_path, inpt, output, ARGS.n, ARGS.resize, ARGS.output_size))
 
     return len(imgs)
+
+
+def save_start_time():
+    if os.path.exists(TIME_PATH):
+        os.remove(TIME_PATH)
+
+    with open(TIME_PATH, "a") as t:
+        t.write(str(time.time()))
 
 
 if __name__ == '__main__':
