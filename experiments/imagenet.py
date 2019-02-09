@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import time
+from pathlib import Path
 
 ARGS = None
 
@@ -10,30 +11,41 @@ log = logging.getLogger(__name__)
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-COMMANDS_PATH = '/tmp/draw-commands.txt'
+COMMANDS_PATH = os.path.join(str(Path.home()), 'draw-commands.txt')
 CSV_HEADERS = 'path,name,n,top1_class,top1_percent,top2_class,top2_percent,top3_class,top3_percent,top4_class,' \
               'top4_percent,top5_class,top5_percent'
 DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} --output-size {}\n'
 DARKNET_CMD_TEMPLATE = 'printf \'{}\' | ./darknet classifier predict cfg/imagenet1k.data cfg/darknet19.cfg ' \
-                       'darknet19.weights | sed \'s/Enter Image Path: //\' > /tmp/darknet-output.txt'
-DARKNET_OUTPUT_PATH = '/tmp/darknet-output.txt'
-TIME_PATH = '/tmp/imagenet-start-time'
+                       'darknet19.weights | sed \'s/Enter Image Path: //\' > {}'
+DARKNET_OUTPUT_DRAWINGS_PATH = os.path.join(str(Path.home()), 'darknet-output-drawings.txt')
+DARKNET_OUTPUT_ORIGINALS_PATH = os.path.join(str(Path.home()), 'darknet-output-originals.txt')
+TIME_PATH = os.path.join(str(Path.home()), 'imagenet-start-time')
 
 
 def main():
+    remove_old_data()
     save_start_time()
     num_images = draw()
-    drawings = classify_images(img_dir=ARGS.drawings_dir, num=num_images * ARGS.n)
+    save_classification_start_time()
+    drawings = classify_images(
+        img_dir=ARGS.drawings_dir,
+        num=num_images * ARGS.n,
+        output_file=DARKNET_OUTPUT_DRAWINGS_PATH
+    )
     write_drawings_classification_results_to_csv(drawings)
-    originals = classify_images(img_dir=ARGS.images_dir, num=num_images)
+    originals = classify_images(
+        img_dir=ARGS.images_dir,
+        num=num_images,
+        output_file=DARKNET_OUTPUT_ORIGINALS_PATH
+    )
     write_originals_classification_results_to_csv(originals)
     log.info(f'Results saved under {ARGS.result_csv_path}')
 
 
-def classify_images(img_dir, num):
+def classify_images(img_dir, num, output_file):
     images = os.listdir(img_dir)
     log.info(f'Found {len(images)} images, should be {num}')
-    classify(images=images, images_dir=img_dir)
+    classify(images=images, images_dir=img_dir, output_file=output_file)
     return images
 
 
@@ -59,7 +71,7 @@ def write_drawings_classification_results_to_csv(drawings):
 
 def write_drawings_results(csv, drawings):
     top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
-        extract_results()
+        extract_results(output_file=DARKNET_OUTPUT_DRAWINGS_PATH)
     for i in range(len(drawings)):
         drawing = drawings[i]
         path = os.path.join(ARGS.drawings_dir, drawing)
@@ -70,8 +82,8 @@ def write_drawings_results(csv, drawings):
         csv.write(csv_line)
 
 
-def extract_results():
-    with open(DARKNET_OUTPUT_PATH, "r") as darknet_output:
+def extract_results(output_file):
+    with open(output_file, "r") as darknet_output:
         darknet = darknet_output.readlines()
     percentages = [line.split('%')[0].strip() for line in darknet]
     classes = [line.split(': ')[1][:-1] for line in darknet]
@@ -83,7 +95,7 @@ def extract_results():
 
 def write_originals_classification_results_to_csv(originals):
     top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
-        extract_results()
+        extract_results(output_file=DARKNET_OUTPUT_ORIGINALS_PATH)
 
     with open(ARGS.result_csv_path, "a") as csv:
         for i in range(len(originals)):
@@ -96,12 +108,12 @@ def write_originals_classification_results_to_csv(originals):
             csv.write(csv_line)
 
 
-def classify(images, images_dir):
+def classify(images, images_dir, output_file):
     images_string = ''
     for drawing in images:
         images_string += os.path.join(images_dir, drawing) + '\n'
 
-    darknet_cmd = DARKNET_CMD_TEMPLATE.format(images_string)
+    darknet_cmd = DARKNET_CMD_TEMPLATE.format(images_string, output_file)
     log.info(f'Command to classify images: {darknet_cmd}')
 
     log.info('Starting classification...')
@@ -134,7 +146,19 @@ def save_start_time():
         os.remove(TIME_PATH)
 
     with open(TIME_PATH, "a") as t:
+        t.write(str(time.time()) + '\n')
+
+
+def save_classification_start_time():
+    with open(TIME_PATH, "a") as t:
         t.write(str(time.time()))
+
+
+def remove_old_data():
+    if os.path.exists(DARKNET_OUTPUT_DRAWINGS_PATH):
+        os.remove(DARKNET_OUTPUT_DRAWINGS_PATH)
+    if os.path.exists(DARKNET_OUTPUT_ORIGINALS_PATH):
+        os.remove(DARKNET_OUTPUT_ORIGINALS_PATH)
 
 
 if __name__ == '__main__':
