@@ -25,11 +25,12 @@ def main():
 
 def classification_status(num_images, total_num_drawings):
     log.info('Drawing completed.')
+    log.info('Classification in progress...')
     with open(TIME_PATH, "r") as t:
         start_time = t.readlines()
     classification_start_time = float(start_time[1])
     elapsed = time.time() - classification_start_time
-    estimated = (num_images + total_num_drawings) * 1.1
+    estimated = ((num_images + total_num_drawings) * 1.1) / ARGS.cpu
     completed = (elapsed / estimated) * 100
     log.info(f'About {completed:.2f}% completed.')
     log.info(f'Time elapsed: {format_time(elapsed)}')
@@ -67,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--images-dir', type=str, help='Directory with input images', required=True)
     parser.add_argument('--drawings-dir', type=str, help='Directory to save drawings', required=True)
     parser.add_argument('--n', type=int, help='Number of shapes to draw', required=True)
+    parser.add_argument('--cpu', type=int, help='Number of CPUs to use', required=True)
     ARGS = parser.parse_args()
     log.info(ARGS)
     main()
