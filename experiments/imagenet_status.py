@@ -4,8 +4,6 @@ import os
 import time
 from pathlib import Path
 
-DARKNET_OUTPUT_DRAWINGS_PATH = os.path.join(str(Path.home()), 'darknet-output-drawings.txt')
-DARKNET_OUTPUT_ORIGINALS_PATH = os.path.join(str(Path.home()), 'darknet-output-originals.txt')
 TIME_PATH = os.path.join(str(Path.home()), 'imagenet-start-time')
 
 ARGS = None
@@ -27,30 +25,15 @@ def main():
 
 def classification_status(num_images, total_num_drawings):
     log.info('Drawing completed.')
-    if os.path.exists(DARKNET_OUTPUT_DRAWINGS_PATH):
-        with open(DARKNET_OUTPUT_DRAWINGS_PATH, "r") as d:
-            num_lines = len(d.readlines())
-    else:
-        num_lines = 0
-    if os.path.exists(DARKNET_OUTPUT_ORIGINALS_PATH):
-        with open(DARKNET_OUTPUT_ORIGINALS_PATH, "r") as d:
-            num_lines += len(d.readlines())
-    imgs_classified = int(num_lines / 5)
-    if imgs_classified < num_images + total_num_drawings:
-        log.info('Classification in progress')
-        with open(TIME_PATH, "r") as t:
-            start_time = t.readlines()
-        classification_start_time = float(start_time[1])
-        completed = imgs_classified * 100 / (num_images + total_num_drawings)
-        log.info(f'{imgs_classified}/{num_images + total_num_drawings} ({completed}%) completed.')
-        elapsed = time.time() - classification_start_time
-        log.info(f'Time elapsed: {format_time(elapsed)}')
-        if imgs_classified == 0:
-            imgs_classified += 1
-        estimated = (num_images + total_num_drawings * elapsed) / imgs_classified
-        log.info(f'Estimated time left: {format_time(estimated - elapsed)}')
-    else:
-        log.info('Classification completed.')
+    with open(TIME_PATH, "r") as t:
+        start_time = t.readlines()
+    classification_start_time = float(start_time[1])
+    elapsed = time.time() - classification_start_time
+    estimated = (num_images + total_num_drawings) * 1.1
+    completed = (elapsed / estimated) * 100
+    log.info(f'About {completed:.2f}% completed.')
+    log.info(f'Time elapsed: {format_time(elapsed)}')
+    log.info(f'Estimated time left: {format_time(estimated - elapsed)}')
 
 
 def drawing_status(completed, num_drawings, total_num_drawings):
