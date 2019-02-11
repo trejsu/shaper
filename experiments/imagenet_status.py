@@ -16,11 +16,11 @@ def main():
     num_images = len(os.listdir(ARGS.images_dir))
     num_drawings = len(os.listdir(ARGS.drawings_dir))
     total_num_drawings = num_images * ARGS.n
-    completed = num_drawings * 100 / total_num_drawings
-    if completed < 100:
-        drawing_status(completed, num_drawings, total_num_drawings)
-    else:
-        classification_status(num_images, total_num_drawings)
+    if not ARGS.drawing_completed:
+        completed = num_drawings * 100 / total_num_drawings
+        if completed < 100:
+            drawing_status(completed, num_drawings, total_num_drawings)
+    classification_status(num_images, total_num_drawings)
 
 
 def classification_status(num_images, total_num_drawings):
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     parser.add_argument('--drawings-dir', type=str, help='Directory to save drawings', required=True)
     parser.add_argument('--n', type=int, help='Number of shapes to draw', required=True)
     parser.add_argument('--cpu', type=int, help='Number of CPUs to use', required=True)
+    parser.add_argument('--drawing-completed', help='Move to classification status', action='store_true')
     ARGS = parser.parse_args()
     log.info(ARGS)
     main()
