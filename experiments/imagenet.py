@@ -47,9 +47,10 @@ def classify_images(img_dir, num, output_file):
     images = os.listdir(img_dir)
     num_images = len(images)
     log.info(f'Found {num_images} images, should be {num}')
-    num_chunks = ARGS.cpu if ARGS.cpu <= num_images else num_images
-    images_chunks = [images[i::num_chunks] for i in range(num_chunks)]
-    log.info(f'Divided images to classify into {num_chunks} parts.')
+    chunk_len = 100 if num_images > 100 * ARGS.cpu else num_images // ARGS.cpu + 1
+    log.info(f'Chunk length =  {chunk_len}.')
+    images_chunks = [images[i:i + chunk_len] for i in range(0, num_images, chunk_len)]
+    log.info(f'Divided images to classify into {len(images_chunks)} parts.')
     classify(chunks=images_chunks, images_dir=img_dir, output_file=output_file)
     return images_chunks
 
