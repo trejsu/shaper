@@ -30,7 +30,7 @@ def classification_status(num_images, total_num_drawings):
         start_time = t.readlines()
     classification_start_time = float(start_time[1])
     elapsed = time.time() - classification_start_time
-    estimated = ((num_images + total_num_drawings) * 1.1) / ARGS.cpu
+    estimated = ((num_images + total_num_drawings) * 5) / ARGS.cpu
     completed = (elapsed / estimated) * 100
     log.info(f'About {completed:.2f}% completed.')
     log.info(f'Time elapsed: {format_time(elapsed)}')

@@ -4,6 +4,8 @@ import os
 import time
 from pathlib import Path
 
+import pandas as pd
+
 ARGS = None
 
 logging.basicConfig(level=logging.INFO)
@@ -13,13 +15,12 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DRAW_COMMANDS_PATH = os.path.join(str(Path.home()), 'draw-commands.txt')
 CLASSIFY_COMMANDS_PATH = os.path.join(str(Path.home()), 'classify-commands.txt')
-CSV_HEADERS = 'path,name,n,top1_class,top1_percent,top2_class,top2_percent,top3_class,top3_percent,top4_class,' \
-              'top4_percent,top5_class,top5_percent'
+CSV_HEADER = 'n,img,true_class,top1_class,top1_prob,top2_class,top2_prob,top3_class,top3_prob,top4_class,' \
+             'top4_prob,top5_class,top5_prob,top1,top2,top3,top4,top5\n'
 DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} --output-size {}\n'
 DARKNET_CMD_TEMPLATE = 'printf \'{}\' | ./darknet classifier predict cfg/imagenet1k.data cfg/darknet19.cfg ' \
                        'darknet19.weights | sed \'s/Enter Image Path: //\' > {}'
-DARKNET_OUTPUT_DRAWINGS_PATH = os.path.join(str(Path.home()), 'darknet-output-drawings-%d.txt')
-DARKNET_OUTPUT_ORIGINALS_PATH = os.path.join(str(Path.home()), 'darknet-output-originals-%d.txt')
+DARKNET_OUTPUT_PATH = os.path.join(str(Path.home()), 'darknet-output-%d.txt')
 TIME_PATH = os.path.join(str(Path.home()), 'imagenet-start-time')
 
 
@@ -31,15 +32,9 @@ def main():
     drawings_chunks = classify_images(
         img_dir=ARGS.drawings_dir,
         num=num_images * ARGS.n,
-        output_file=DARKNET_OUTPUT_DRAWINGS_PATH
+        output_file=DARKNET_OUTPUT_PATH
     )
-    write_drawings_classification_results_to_csv(drawings_chunks)
-    originals_chunks = classify_images(
-        img_dir=ARGS.images_dir,
-        num=num_images,
-        output_file=DARKNET_OUTPUT_ORIGINALS_PATH
-    )
-    write_originals_classification_results_to_csv(originals_chunks)
+    write_classification_results_to_csv(drawings_chunks)
     log.info(f'Results saved under {ARGS.result_csv_path}')
 
 
@@ -64,52 +59,45 @@ def draw():
     return num_images
 
 
-def write_drawings_classification_results_to_csv(chunks):
+def write_classification_results_to_csv(chunks):
     if os.path.exists(ARGS.result_csv_path):
         old_results = ARGS.result_csv_path + '.old'
         log.warning(f'Found old csv with results, renaming to {old_results}')
         os.rename(ARGS.result_csv_path, old_results)
 
     with open(ARGS.result_csv_path, "a") as csv:
-        csv.write(f'{CSV_HEADERS}\n')
-        write_drawings_results(csv, chunks)
+        csv.write(CSV_HEADER)
+        write_results(csv, chunks)
 
 
-def write_drawings_results(csv, chunks):
-    top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
-        extract_results(output_file=DARKNET_OUTPUT_DRAWINGS_PATH, num_chunks=len(chunks))
-    for chunk_index, chunk in enumerate(chunks):
-        for img_index in range(len(chunk)):
-            drawing = chunk[img_index]
-            path = os.path.join(ARGS.drawings_dir, drawing)
+def write_results(csv, chunks):
+    top1_cls, top1_prob, top2_cls, top2_prob, top3_cls, top3_prob, top4_cls, top4_prob, top5_cls, top5_prob = \
+        extract_results(output_file=DARKNET_OUTPUT_PATH, num_chunks=len(chunks))
+
+    df = pd.read_csv(ARGS.img_cls_mapping)
+    log.info(f'Loaded img to class mapping data frame with {len(df.index)} rows.')
+    img_to_cls = dict(zip(df['img'], df['class']))
+
+    for i, chunk in enumerate(chunks):
+        for j in range(len(chunk)):
+            drawing = chunk[j]
             name = drawing.split('-')[0]
             n = drawing.split('-')[1].split('.')[0]
-            csv_line = ','.join([path, name, n, top1_cls[chunk_index][img_index], top1_perc[chunk_index][img_index],
-                                 top2_cls[chunk_index][img_index], top2_perc[chunk_index][img_index],
-                                 top3_cls[chunk_index][img_index], top3_perc[chunk_index][img_index],
-                                 top4_cls[chunk_index][img_index], top4_perc[chunk_index][img_index],
-                                 top5_cls[chunk_index][img_index], top5_perc[chunk_index][img_index]]) + '\n'
+
+            true_cls, top1, top2, top3, top4, top5 = score_predictions(name, [top1_cls[i][j], top2_cls[i][j],
+                                                                              top3_cls[i][j], top4_cls[i][j],
+                                                                              top5_cls[i][j]], img_to_cls)
+
+            csv_line = ','.join([n, name, true_cls, top1_cls[i][j], top1_prob[i][j], top2_cls[i][j], top2_prob[i][j],
+                                 top3_cls[i][j], top3_prob[i][j], top4_cls[i][j], top4_prob[i][j], top5_cls[i][j],
+                                 top5_prob[i][j], top1, top2, top3, top4, top5]) + '\n'
             csv.write(csv_line)
 
 
-def write_originals_classification_results_to_csv(chunks):
-    top1_cls, top1_perc, top2_cls, top2_perc, top3_cls, top3_perc, top4_cls, top4_perc, top5_cls, top5_perc = \
-        extract_results(output_file=DARKNET_OUTPUT_ORIGINALS_PATH, num_chunks=len(chunks))
-
-    with open(ARGS.result_csv_path, "a") as csv:
-        for chunk_index, chunk in enumerate(chunks):
-            for img_index in range(len(chunk)):
-                img = chunk[img_index]
-                path = os.path.join(ARGS.images_dir, img)
-                name = img.split('.')[0]
-                n = '0'
-                csv_line = ','.join([path, name, n, top1_cls[chunk_index][img_index],
-                                     top1_perc[chunk_index][img_index], top2_cls[chunk_index][img_index],
-                                     top2_perc[chunk_index][img_index], top3_cls[chunk_index][img_index],
-                                     top3_perc[chunk_index][img_index], top4_cls[chunk_index][img_index],
-                                     top4_perc[chunk_index][img_index], top5_cls[chunk_index][img_index],
-                                     top5_perc[chunk_index][img_index]]) + '\n'
-                csv.write(csv_line)
+def score_predictions(name, top_cls, img_to_cls):
+    true_cls = img_to_cls[name]
+    return true_cls, str(int(true_cls in top_cls[:1])), str(int(true_cls in top_cls[:2])), \
+           str(int(true_cls in top_cls[:3])), str(int(true_cls in top_cls[:4])), str(int(true_cls in top_cls[:5]))
 
 
 def extract_results(output_file, num_chunks):
@@ -125,12 +113,12 @@ def extract_results_for_one_chunk(output_file):
     log.info(f'Extracting results for {output_file}')
     with open(output_file, "r") as darknet_output:
         darknet = darknet_output.readlines()
-    percentages = [line.split('%')[0].strip() for line in darknet]
+    probs = [line.split('%')[0].strip() for line in darknet]
     classes = [line.split(': ')[1][:-1] for line in darknet]
-    assert len(percentages) % 5 == 0
+    assert len(probs) % 5 == 0
     assert len(classes) % 5 == 0
-    return classes[0::5], percentages[0::5], classes[1::5], percentages[1::5], classes[2::5], percentages[2::5], \
-           classes[3::5], percentages[3::5], classes[4::5], percentages[4::5]
+    return classes[0::5], probs[0::5], classes[1::5], probs[1::5], classes[2::5], probs[2::5], \
+           classes[3::5], probs[3::5], classes[4::5], probs[4::5]
 
 
 def classify(chunks, images_dir, output_file):
@@ -185,10 +173,8 @@ def save_classification_start_time():
 
 
 def remove_old_data():
-    if os.path.exists(DARKNET_OUTPUT_DRAWINGS_PATH):
-        os.remove(DARKNET_OUTPUT_DRAWINGS_PATH)
-    if os.path.exists(DARKNET_OUTPUT_ORIGINALS_PATH):
-        os.remove(DARKNET_OUTPUT_ORIGINALS_PATH)
+    if os.path.exists(DARKNET_OUTPUT_PATH):
+        os.remove(DARKNET_OUTPUT_PATH)
 
 
 if __name__ == '__main__':
@@ -201,6 +187,8 @@ if __name__ == '__main__':
     parser.add_argument('--output-size', type=int, default=300)
     parser.add_argument('--result-csv-path', type=str, help='Output path to csv classification results', required=True)
     parser.add_argument('--darknet-path', type=str, help='Path to darknet classifier', required=True)
+    parser.add_argument('--img-cls-mapping', type=str, help='Path to mapping between image names and labels',
+                        required=True)
     ARGS = parser.parse_args()
     log.info(ARGS)
     main()
