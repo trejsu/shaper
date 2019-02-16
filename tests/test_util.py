@@ -1,10 +1,11 @@
+import os
+
 import numpy as np
 import pytest
 
-from shaper.shape.quadrangle import Quadrangle
-from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img
 from config import ROOT_DIR
-import os
+from shaper.shape.quadrangle import Quadrangle
+from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img, hex_to_rgb
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -152,3 +153,16 @@ def test_read_img_png():
     img = read_img(path)
     assert img.shape[2] == 3
     assert np.any(img > 1)
+
+
+@pytest.mark.parametrize("hex, r, g, b", [
+    ('ffffff', 255, 255, 255),
+    ('000000', 0, 0, 0),
+    ('123456', 18, 52, 86),
+    ('abcdef', 171, 205, 239)
+])
+def test_hex_to_rgb(hex, r, g, b):
+    rgb = hex_to_rgb(hex)
+    assert rgb[0] == r
+    assert rgb[1] == g
+    assert rgb[2] == b

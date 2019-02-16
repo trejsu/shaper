@@ -89,7 +89,7 @@ class QuadrangleBrush(Brush):
             alpha=self.get_alpha
         ) for p in points]
 
-        num_bounds = 28 * h * len(shapes)
+        num_bounds = 30 * h * len(shapes)
         bounds = np.empty(shape=(num_bounds, 3), dtype=np.int64)
 
         i = 0

@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DRAW_COMMANDS_PATH = os.path.join(str(Path.home()), 'draw-commands.txt')
-DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} --output-size {}\n'
+DRAW_CMD_TEMPLATE = 'python {} --input {} --output {}-%d.jpg --n {} --resize {} --output-size {} --alpha {} {}\n'
 TIME_PATH = os.path.join(str(Path.home()), 'imagenet-start-time')
 
 
@@ -44,7 +44,9 @@ def prepare_commands_for_drawing():
             inpt = os.path.join(ARGS.images_dir, img)
             output = os.path.join(ARGS.drawings_dir, img.split('.')[0])
             commands.write(
-                DRAW_CMD_TEMPLATE.format(shaper_main_path, inpt, output, ARGS.n, ARGS.resize, ARGS.output_size))
+                DRAW_CMD_TEMPLATE.format(shaper_main_path, inpt, output, ARGS.n, ARGS.resize, ARGS.output_size,
+                                         ARGS.alpha,
+                                         '' if ARGS.background is None else f'--background {ARGS.background}'))
 
 
 def save_start_time():
@@ -63,6 +65,8 @@ if __name__ == '__main__':
     parser.add_argument('--cpu', type=int, help='Number of CPUs to use', required=True)
     parser.add_argument('--resize', type=int, default=300)
     parser.add_argument('--output-size', type=int, default=300)
+    parser.add_argument('--alpha', type=float, default=0.5)
+    parser.add_argument('--background', type=str)
     ARGS = parser.parse_args()
     log.info(ARGS)
     main()

@@ -71,7 +71,8 @@ def init():
         size=ARGS.resize,
         output_size=ARGS.output_size,
         num_shapes=ARGS.n,
-        metric=ARGS.metric
+        metric=ARGS.metric,
+        background=ARGS.background
     )
     show = show_function(canvas)
     score = canvas.init()
@@ -167,6 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int)
     parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
     parser.add_argument('--scale-decay', type=float, default=0.00005)
+    parser.add_argument('--background', type=str, help='Initial background color (hex value without #), if not passed, '
+                                                       'will be the average target img color')
     ARGS = parser.parse_args()
 
     seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)

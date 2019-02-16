@@ -120,3 +120,7 @@ def read_img(path):
         img *= 255
         img = img.astype('uint8')
     return img[:, :, :3]
+
+
+def hex_to_rgb(hex):
+    return tuple(int(hex[i:i + 2], 16) for i in (0, 2, 4))
