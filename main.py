@@ -174,4 +174,7 @@ if __name__ == '__main__':
     log.info(f'Rng seed = {seed}')
     ARGS.rng = rng
 
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.exception("")
