@@ -2,7 +2,7 @@
 import tensorflow as tf
 
 import spiral.utils as ut
-from spiral.agent import Agent
+from .agent import Agent
 
 logger = ut.logging.get_logger()
 

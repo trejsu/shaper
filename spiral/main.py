@@ -7,13 +7,13 @@ import tensorflow as tf
 
 import spiral.trainer as trainer
 import spiral.utils as ut
-from spiral.envs import create_env
+from .envs import create_env
 
 logger = ut.logging.get_logger()
 
 
 def main(_):
-    from spiral.config import get_args
+    from .config import get_args
     args = get_args()
 
     ut.train.set_global_seed(args.seed + args.task)

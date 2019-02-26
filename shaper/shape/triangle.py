@@ -1,8 +1,9 @@
 import numpy as np
 from numba import njit
 
-from shaper.shape.shape import Shape, f
 from shaper.util import timeit
+from .shape import Shape
+from .shape import f
 
 
 class Triangle(Shape):

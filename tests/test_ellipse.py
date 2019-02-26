@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from shaper.shape.ellipse import rasterize_ellipse, Ellipse
+from shaper.shape import Ellipse
+from shaper.shape.ellipse import rasterize_ellipse
 
 
 def test_bounds_for_ellipse_should_have_proper_limits():

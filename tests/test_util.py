@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from config import ROOT_DIR
-from shaper.shape.quadrangle import Quadrangle
+from shaper.shape import Quadrangle
 from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img, hex_to_rgb
 
 

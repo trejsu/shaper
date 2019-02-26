@@ -3,11 +3,11 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shaper.shape.brush import QuadrangleBrush, Quadrangle
-from shaper.shape.curve import Curve
-from shaper.shape.ellipse import Ellipse
-from shaper.shape.quadrangle import Rectangle
-from shaper.shape.triangle import Triangle
+from shaper.shape import Curve
+from shaper.shape import Ellipse
+from shaper.shape import QuadrangleBrush, Quadrangle
+from shaper.shape import Rectangle
+from shaper.shape import Triangle
 from shaper.util import normalize
 from shaper.util import timeit
 

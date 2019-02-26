@@ -3,8 +3,9 @@ import math
 import numpy as np
 from numba import njit
 
-from shaper.shape.shape import Shape, merge_bounds
 from shaper.util import timeit
+from .shape import Shape
+from .shape import merge_bounds
 from .triangle import rasterize_triangle
 
 

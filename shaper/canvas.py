@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import matplotlib.image as mimg
 
-from shaper.util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full, read_img, hex_to_rgb
+from .util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full, read_img, hex_to_rgb
 from .util import timeit
 
 matplotlib.use("TkAgg")

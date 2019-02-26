@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.shape.quadrangle import Quadrangle
+from shaper.shape import Quadrangle
 
 
 def test_from_normalized_params():

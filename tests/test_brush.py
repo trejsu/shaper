@@ -1,6 +1,6 @@
 import numpy as np
 
-from shaper.shape.brush import Brush
+from shaper.shape import Brush
 
 
 def test_params_intervals():

@@ -21,7 +21,7 @@ model_arg.add_argument('--loss', default='gan', type=str,
 
 # environment
 env_arg = ut.args.add_argument_group(parser, 'environment')
-env_arg.add_argument('--env', default="simple_mnist")
+env_arg.add_argument('--env', default="shaper")
 env_arg.add_argument('--jump', default=True, type=ut.args.str2bool)
 env_arg.add_argument('--curve', default=True, type=ut.args.str2bool)
 env_arg.add_argument('--episode_length', default=5, type=int)
