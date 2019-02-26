@@ -1,3 +1,9 @@
+scipy
+tqdm
+six
+imageio
+cloudpickle
+tensorflow
 PIL
 matplotlib
 numba
