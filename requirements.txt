@@ -1,0 +1,4 @@
+PIL
+matplotlib
+numba
+numpy

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
+from es.strategy import RandomStrategy
 from shaper.shape.shape import Shape
-from shaper.strategy import RandomStrategy
 
 
 @pytest.mark.parametrize("strategy_class", [
