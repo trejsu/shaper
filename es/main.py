@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    canvas, show = init()
+    canvas, show, save = init()
     start = time.time()
 
     random = RandomStrategy(
@@ -42,16 +42,19 @@ def main():
 
         score = canvas.add(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
+
         show()
+
         if save_every_action():
-            canvas.save(ARGS.output % i)
+            save(ARGS.output % i)
+
     elapsed = time.time() - start
     shapes_drawn = ARGS.n * (ARGS.step * ARGS.sample + ARGS.random)
     log.info(f'Total shapes drawn {shapes_drawn}, time {elapsed:.2f} s, '
              f'({shapes_drawn / elapsed:.1f} shapes/s)')
 
     if save_final():
-        canvas.save(ARGS.output)
+        save(ARGS.output)
 
     if ARGS.time:
         print_times()
@@ -69,15 +72,16 @@ def init():
     canvas = Canvas(
         target=ARGS.input,
         size=ARGS.resize,
-        output_size=ARGS.output_size,
+        save_actions=ARGS.save_actions,
         num_shapes=ARGS.n,
         metric=ARGS.metric,
         background=ARGS.background
     )
     show = show_function(canvas)
+    save = save_function(canvas)
     score = canvas.init()
     log.info(f'Initial score: {score}')
-    return canvas, show
+    return canvas, show, save
 
 
 def pick_strategy(best_shape, canvas):
@@ -129,6 +133,10 @@ def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
 
 
+def save_function(canvas):
+    return (lambda output: canvas.save_in_size(output, ARGS.output_size)) if ARGS.save_actions else canvas.save
+
+
 def save_every_action():
     return ARGS.output is not None and '%d' in ARGS.output
 
@@ -165,6 +173,8 @@ if __name__ == '__main__':
                         default=100)
     parser.add_argument('--output-size', type=int, help='Output image size', default=512)
     parser.add_argument('--time', action='store_true', default=False)
+    parser.add_argument('--save-actions', action='store_true', default=False, help="When not present, output-size "
+                                                                                   "parameter will be ignored, and output image will be saved in size equal to resize parameter")
     parser.add_argument('--seed', type=int)
     parser.add_argument('--metric', type=str, choices=['l1', 'l2'], default='l2')
     parser.add_argument('--scale-decay', type=float, default=0.00005)
