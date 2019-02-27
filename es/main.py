@@ -7,7 +7,6 @@ import numpy as np
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shaper.canvas import Canvas
-from shaper.util import print_times
 
 ARGS = None
 
@@ -55,9 +54,6 @@ def main():
 
     if save_final():
         save(ARGS.output)
-
-    if ARGS.time:
-        print_times()
 
 
 def find_best_shape(canvas, strategy, action=None):
