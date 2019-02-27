@@ -3,7 +3,6 @@ import logging
 import numpy as np
 from numba import njit
 
-from shaper.util import timeit
 from .curve import Curve
 from .quadrangle import Quadrangle
 from .shape import Shape
@@ -20,14 +19,12 @@ class Brush(Shape):
         self.alpha = alpha
 
     @classmethod
-    @timeit
     def random(cls, w, h, alpha, rng, scale=1):
         path = Curve.random(w=w, h=h, alpha=alpha, rng=rng, scale=scale)
         size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE) * scale
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
-    @timeit
     def from_params(cls, *params):
         return cls(
             path=Curve.from_params(*params[:-2], params[-1]),
@@ -36,7 +33,6 @@ class Brush(Shape):
         )
 
     @classmethod
-    @timeit
     def from_normalized_params(cls, w, h, *params):
         return cls(
             path=Curve.from_normalized_params(w, h, *params[:-2], params[-1]),
@@ -44,24 +40,20 @@ class Brush(Shape):
             alpha=params[-1]
         )
 
-    @timeit
     def get_bounds(self, h, w):
         raise NotImplementedError
 
     def get_alpha(self):
         return self.alpha
 
-    @timeit
     def params(self):
         return np.append(self.path.params(), self.size)
 
-    @timeit
     def normalized_params(self, w, h):
         return np.append(self.path.normalized_params(w, h)[:-1],
                          [self.size / (min(w, h) // Brush.SIZE_SCALE), self.alpha])
 
     @staticmethod
-    @timeit
     def params_intervals():
         return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // Brush.SIZE_SCALE)
 

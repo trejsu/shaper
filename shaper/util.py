@@ -25,7 +25,6 @@ def timeit(method):
     return timed
 
 
-@timeit
 def resize_to_size(img, size):
     w = img.shape[1]
     h = img.shape[0]
@@ -38,24 +37,20 @@ def resize_to_size(img, size):
     return resize(img=img, w=new_w, h=new_h)
 
 
-@timeit
 def resize(img, w, h):
     result = Image.fromarray(img)
     result = result.resize((w, h), Image.ANTIALIAS)
     return np.array(result)
 
 
-@timeit
 def l2_full(target, x):
     return np.square(target - x)
 
 
-@timeit
 def l1_full(target, x):
     return np.abs(target - x)
 
 
-@timeit
 def average_color(img):
     return np.average(img, axis=(0, 1))
 
@@ -80,7 +75,6 @@ def update_l1(distance, bounds, img, target):
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
 
 
-@timeit
 def normalize(arr):
     arr_minus_mean = np.array(arr) - np.mean(arr)
     if np.all(arr_minus_mean == 0):

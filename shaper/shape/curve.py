@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 
-from shaper.util import MIN_VALUE, timeit
+from shaper.util import MIN_VALUE
 from .shape import Shape
 
 
@@ -15,7 +15,6 @@ class Curve(Shape):
         return f'Curve(P0={self.points[0]}, P1={self.points[1]}, P2={self.points[2]})'
 
     @staticmethod
-    @timeit
     def random(w, h, alpha, rng, scale=1):
         xs = rng.randint(w, size=(3, 1))
         ys = rng.randint(h, size=(3, 1))
@@ -27,12 +26,10 @@ class Curve(Shape):
         return Curve(points, alpha)
 
     @staticmethod
-    @timeit
     def from_params(*params):
         return Curve(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
     @staticmethod
-    @timeit
     def from_normalized_params(w, h, *params):
         points = np.empty(shape=(3, 2))
         points[:, 0] = [int(x * w) for x in params[:-1][::2]]
@@ -42,18 +39,15 @@ class Curve(Shape):
             alpha=params[-1]
         )
 
-    @timeit
     def get_bounds(self, h=None, w=None):
         return rasterize_curve(self.points)
 
     def get_alpha(self):
         return self.alpha
 
-    @timeit
     def params(self):
         return self.points.reshape(-1, ).astype(np.float64)
 
-    @timeit
     def normalized_params(self, w, h):
         return np.append(
             arr=self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h]),
@@ -61,7 +55,6 @@ class Curve(Shape):
         )
 
     @staticmethod
-    @timeit
     def params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
 

@@ -3,7 +3,7 @@ from abc import abstractmethod
 import numpy as np
 from numba import njit
 
-from shaper.util import timeit, MIN_VALUE
+from shaper.util import MIN_VALUE
 
 
 class Shape(object):
@@ -43,7 +43,6 @@ class Shape(object):
     def normalized_params(self, w, h):
         raise NotImplementedError
 
-    @timeit
     def render(self, img, target, color):
         bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])

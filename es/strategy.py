@@ -9,7 +9,6 @@ from shaper.shape import QuadrangleBrush, Quadrangle
 from shaper.shape import Rectangle
 from shaper.shape import Triangle
 from shaper.util import normalize
-from shaper.util import timeit
 
 log = logging.getLogger(__name__)
 
@@ -116,7 +115,6 @@ class EvolutionStrategy(Strategy):
         self.eps = None
         self.best = None
 
-    @timeit
     def ask(self, scale=None):
         self.eps = self.rng.normal(loc=0, scale=1, size=(self.n, len(self.optimizer.get_params())))
         shapes = []
@@ -128,7 +126,6 @@ class EvolutionStrategy(Strategy):
         self.shapes = shapes
         return self.shapes
 
-    @timeit
     def tell(self, scores):
         self.scores = scores
         normalized_scores = normalize(scores)
@@ -136,6 +133,5 @@ class EvolutionStrategy(Strategy):
         gradient = np.dot(normalized_scores.T, self.eps) / (self.n * self.sigma)
         self.optimizer.step(gradient)
 
-    @timeit
     def result(self):
         return self.shapes[self.best], self.scores[self.best]

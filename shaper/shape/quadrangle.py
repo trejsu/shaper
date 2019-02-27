@@ -3,7 +3,6 @@ import math
 import numpy as np
 from numba import njit
 
-from shaper.util import timeit
 from .shape import Shape
 from .shape import merge_bounds
 from .triangle import rasterize_triangle
@@ -88,7 +87,6 @@ class Rectangle(Shape):
         return f'Rectangle(cx={self.cx}, cy={self.cy}, w={self.w}, h={self.h}, rotation={self.rotation})'
 
     @staticmethod
-    @timeit
     def random(w, h, alpha, rng, scale=1):
         cx = rng.randint(w)
         cy = rng.randint(h)
@@ -98,12 +96,10 @@ class Rectangle(Shape):
         return Rectangle(cx=cx, cy=cy, w=rw, h=rh, rotation=rot, alpha=alpha)
 
     @staticmethod
-    @timeit
     def from_params(*params):
         return Rectangle(*params)
 
     @staticmethod
-    @timeit
     def from_normalized_params(w, h, *params):
         return Rectangle(
             cx=int(params[0] * w),
@@ -114,18 +110,15 @@ class Rectangle(Shape):
             alpha=params[5]
         )
 
-    @timeit
     def get_bounds(self, h=None, w=None):
         return rasterize_rectangle(self.cx, self.cy, self.w, self.h, self.rotation)
 
     def get_alpha(self):
         return self.alpha
 
-    @timeit
     def params(self):
         return np.array([self.cx, self.cy, self.w, self.h, self.rotation], dtype=np.float64)
 
-    @timeit
     def normalized_params(self, w, h):
         return np.append(
             np.array([self.cx, self.cy, self.w, self.h, self.rotation], dtype=np.float64) /
@@ -134,7 +127,6 @@ class Rectangle(Shape):
         )
 
     @staticmethod
-    @timeit
     def params_intervals():
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 

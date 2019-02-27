@@ -4,7 +4,6 @@ import matplotlib
 import matplotlib.image as mimg
 
 from .util import l2_full, average_color, update_l2, resize_to_size, update_l1, l1_full, read_img, hex_to_rgb
-from .util import timeit
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -49,7 +48,6 @@ class Canvas(object):
             self.showed.set_data(img)
             self.fig.canvas.draw()
 
-    @timeit
     def add(self, shape, color=None):
         self.prev_img = self.img.copy()
         self.prev_distance = self.distance.copy()
@@ -64,11 +62,9 @@ class Canvas(object):
             self._save_shape(shape)
         return self._score()
 
-    @timeit
     def size(self):
         return self.img.shape[1], self.img.shape[0]
 
-    @timeit
     def undo(self):
         self.img = self.prev_img
         self.distance = self.prev_distance
@@ -78,7 +74,6 @@ class Canvas(object):
     def _remove_last_shape(self):
         self.current_shape_num -= 1
 
-    @timeit
     def save_in_size(self, output, size):
         if self.save_actions:
             log.debug(f'Saving image under {output} in size = {size}')
@@ -112,22 +107,18 @@ class Canvas(object):
         else:
             raise Exception("Cannot save in size, save_actions set to False")
 
-    @timeit
     def save(self, output):
         log.debug(f'Saving image under {output}')
         mimg.imsave(output, self.img.astype(np.uint8))
 
-    @timeit
     def evaluate(self, shape):
         score = self.add(shape)
         self.undo()
         return score
 
-    @timeit
     def _score(self):
         return np.average(self.distance)
 
-    @timeit
     def _save_shape(self, shape):
         self.shapes[self.current_shape_num] = (
             shape.__class__,
