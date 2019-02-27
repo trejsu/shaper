@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 
+from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shaper.canvas import Canvas
@@ -15,12 +16,12 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    canvas, show, save = init()
+    env, show, save = init()
     start = time.time()
 
     random = RandomStrategy(
         ARGS.random,
-        *canvas.size(),
+        *env.observation_space(),
         alpha=ARGS.alpha,
         shape_mode=ARGS.shape_mode,
         rng=ARGS.rng,
@@ -28,18 +29,18 @@ def main():
     )
 
     for i in range(1, ARGS.n + 1):
-        best_score, best_shape = find_best_shape(canvas=canvas, strategy=random, action=i)
+        best_score, best_shape = find_best_shape(env=env, strategy=random, action=i)
 
-        strategy = pick_strategy(best_shape, canvas)
+        strategy = pick_strategy(best_shape=best_shape, env=env)
 
         for j in range(1, ARGS.step + 1):
-            score, shape = find_best_shape(canvas, strategy)
+            score, shape = find_best_shape(env=env, strategy=strategy)
 
             if score < best_score:
                 best_score = score
                 best_shape = shape
 
-        score = canvas.add(best_shape)
+        score = env.step(best_shape)
         log.info(f'Action {i}, new score: {score:.4f}')
 
         show()
@@ -56,9 +57,9 @@ def main():
         save(ARGS.output)
 
 
-def find_best_shape(canvas, strategy, action=None):
+def find_best_shape(env, strategy, action=None):
     shapes = strategy.ask() if action is None else strategy.ask(action=action)
-    scores = [canvas.evaluate(shape) for shape in shapes]
+    scores = [env.evaluate(shape) for shape in shapes]
     strategy.tell(scores)
     shape, score = strategy.result()
     return score, shape
@@ -68,19 +69,19 @@ def init():
     canvas = Canvas(
         target=ARGS.input,
         size=ARGS.resize,
-        save_actions=ARGS.save_actions,
-        num_shapes=ARGS.n,
-        metric=ARGS.metric,
         background=ARGS.background
     )
+    env = Environment(canvas=canvas, metric=ARGS.metric, num_shapes=ARGS.n, save_actions=ARGS.save_actions)
+
     show = show_function(canvas)
-    save = save_function(canvas)
-    score = canvas.init()
+    save = save_function(canvas, env)
+
+    score = env.init()
     log.info(f'Initial score: {score}')
-    return canvas, show, save
+    return env, show, save
 
 
-def pick_strategy(best_shape, canvas):
+def pick_strategy(best_shape, env):
     if ARGS.algorithm == 'natural':
         optimizer = {
             'sgd': GradientDescent,
@@ -94,7 +95,7 @@ def pick_strategy(best_shape, canvas):
 
         strategy = EvolutionStrategy(
             best_shape,
-            *canvas.size(),
+            *env.observation_space(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
@@ -108,7 +109,7 @@ def pick_strategy(best_shape, canvas):
     elif ARGS.algorithm == 'simple':
         strategy = SimpleEvolutionStrategy(
             best_shape,
-            *canvas.size(),
+            *env.observation_space(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
@@ -118,7 +119,7 @@ def pick_strategy(best_shape, canvas):
     else:
         strategy = RandomStrategy(
             ARGS.sample,
-            *canvas.size(),
+            *env.observation_space(),
             alpha=ARGS.alpha,
             rng=ARGS.rng
         )
@@ -129,8 +130,8 @@ def show_function(canvas):
     return canvas.show_and_wait if ARGS.render_mode == 0 else canvas.show if ARGS.render_mode == 1 else lambda: None
 
 
-def save_function(canvas):
-    return (lambda output: canvas.save_in_size(output, ARGS.output_size)) if ARGS.save_actions else canvas.save
+def save_function(canvas, env):
+    return (lambda output: env.save_in_size(output, ARGS.output_size)) if ARGS.save_actions else canvas.save
 
 
 def save_every_action():
