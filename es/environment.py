@@ -24,7 +24,7 @@ class Environment(object):
     def init(self):
         return self._score()
 
-    def observation_space(self):
+    def observation_shape(self):
         return self.canvas.size()
 
     def evaluate(self, shape, color=None):
@@ -85,7 +85,7 @@ class Environment(object):
     def _save_shape(self, shape, color):
         self.shapes[self.current_shape_num] = (
             shape.__class__,
-            shape.normalized_params(*self.observation_space()),
+            shape.normalized_params(*self.observation_shape()),
             color
         )
         self.current_shape_num += 1

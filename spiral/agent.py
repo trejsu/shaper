@@ -361,14 +361,9 @@ class Agent(object):
                     self.global_network.samples[name]: name_a,
                 })
 
-        if self.args.conditional:
-            feed_dict.update({
-                self.global_network.c: batch.c,
-            })
-        else:
-            feed_dict.update({
-                self.global_network.z: batch.z,
-            })
+        feed_dict.update({
+            self.global_network.c: batch.c,
+        })
 
         #################
         # Fetch ops

@@ -7,20 +7,13 @@ class Environment(object):
     def __init__(self, args):
         self.args = args
 
-        if not args.jump and 'jump' in self.action_sizes:
-            del self.action_sizes['jump']
-
-        if not args.curve and 'control' in self.action_sizes:
-            del self.action_sizes['control']
-
         # terminal
         self.episode_length = args.episode_length
 
         # screen
         self.screen_size = args.screen_size
         self.height, self.width = self.screen_size, self.screen_size
-        self.observation_shape = [
-            self.height, self.width, args.color_channel]
+        self.observation_shape = [self.height, self.width, args.color_channel]
 
         # location
         self.location_size = args.location_size
@@ -34,8 +27,6 @@ class Environment(object):
         self.ac_idx = {
             ac: idx for idx, ac in enumerate(self.acs)
         }
-
-        self.conditional = args.conditional
 
     def random_action(self):
         action = []
@@ -54,3 +45,12 @@ class Environment(object):
 
     def denorm(self, img):
         return img * 127.5 + 127.5
+
+    def reset(self):
+        raise NotImplementedError
+
+    def step(self, action):
+        raise NotImplementedError
+
+    def get_random_target(self, num=1, squeeze=False):
+        raise NotImplementedError

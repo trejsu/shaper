@@ -34,9 +34,8 @@ class Discriminator(object):
             fake = norm_fn(fake)
             real = norm_fn(real)
 
-        if self.args.conditional:
-            fake = tf.concat([fake, real], axis=channel_idx)
-            real = tf.concat([real, real], axis=channel_idx)
+        fake = tf.concat([fake, real], axis=channel_idx)
+        real = tf.concat([real, real], axis=channel_idx)
 
         self.fake_in = fake
         self.real_in = real

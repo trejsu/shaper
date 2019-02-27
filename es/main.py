@@ -21,7 +21,7 @@ def main():
 
     random = RandomStrategy(
         ARGS.random,
-        *env.observation_space(),
+        *env.observation_shape(),
         alpha=ARGS.alpha,
         shape_mode=ARGS.shape_mode,
         rng=ARGS.rng,
@@ -95,7 +95,7 @@ def pick_strategy(best_shape, env):
 
         strategy = EvolutionStrategy(
             best_shape,
-            *env.observation_space(),
+            *env.observation_shape(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
@@ -109,7 +109,7 @@ def pick_strategy(best_shape, env):
     elif ARGS.algorithm == 'simple':
         strategy = SimpleEvolutionStrategy(
             best_shape,
-            *env.observation_space(),
+            *env.observation_shape(),
             alpha=ARGS.alpha,
             n=ARGS.sample,
             sigma_factor=ARGS.sigma_factor,
@@ -119,7 +119,7 @@ def pick_strategy(best_shape, env):
     else:
         strategy = RandomStrategy(
             ARGS.sample,
-            *env.observation_space(),
+            *env.observation_shape(),
             alpha=ARGS.alpha,
             rng=ARGS.rng
         )

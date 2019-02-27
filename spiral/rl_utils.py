@@ -137,14 +137,10 @@ class WorkerThread(threading.Thread):
                 self.traj_placeholders['features']: out.features,
                 self.traj_placeholders['r']: out.r,
             }
-            if self.env.conditional:
-                feed_dict.update({
-                    self.traj_placeholders['conditions']: out.conditions,
-                })
-            else:
-                feed_dict.update({
-                    self.traj_placeholders['z']: out.z,
-                })
+
+            feed_dict.update({
+                self.traj_placeholders['conditions']: out.conditions,
+            })
 
             for k, v in feed_dict.items():
                 if isinstance(v, list):

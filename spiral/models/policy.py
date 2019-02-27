@@ -43,28 +43,15 @@ class Policy(object):
             self.ac = ac = tf.placeholder(
                 tf.float32, [None, None, action_num], name='ac')
 
-            if args.conditional:
-                # [B, max_time, H, W, C]
-                self.c = c = tf.placeholder(
-                    tf.float32, [None, None] + self.image_shape, name='c')
-                # TODO: need to get confirmed from the authors
-                x = tf.concat([x, c], axis=-1)
-                x_shape = list(self.image_shape)
-                x_shape[-1] = int(x.get_shape()[-1])
+            # [B, max_time, H, W, C]
+            self.c = c = tf.placeholder(
+                tf.float32, [None, None] + self.image_shape, name='c')
+            # TODO: need to get confirmed from the authors
+            x = tf.concat([x, c], axis=-1)
+            x_shape = list(self.image_shape)
+            x_shape[-1] = int(x.get_shape()[-1])
 
-                self.z = None
-            else:
-                self.c = None
-                x_shape = self.image_shape
-
-                # [B, max_time, z_dim]
-                self.z = z = tf.placeholder(
-                    tf.float32, [None, None, self.args.z_dim], name='z')
-
-                z_enc = mlp(
-                    z,
-                    self.lstm_size,
-                    name="z_enc")
+            self.z = None
 
             x = tf.reshape(x, [-1] + x_shape)
             ac = tf.reshape(ac, [-1, action_num])
@@ -97,7 +84,7 @@ class Policy(object):
                 padding='same',
                 activation=tf.nn.relu,
                 data_format=self.data_format,
-                name="x_c_enc" if args.conditional else "x_enc")
+                name="x_c_enc")
 
             add = x_enc + a_expand
 
@@ -125,9 +112,6 @@ class Policy(object):
             flat_out = tl.flatten(out)
             lstm_in_shape = [batch_size, max_time, flat_out.get_shape()[-1]]
             lstm_in = tf.reshape(flat_out, lstm_in_shape, name="lstm_in")
-
-            if not self.args.conditional:
-                lstm_in += z_enc
 
             self.lstm = tc.BasicLSTMCell(self.lstm_size, state_is_tuple=True)
 
@@ -200,8 +184,6 @@ class Policy(object):
         feed_dict = self.get_feed_dict(ob, ac, c, h, condition, z)
 
         fetches = [self.one_hot_samples, self.vf] + self.state_out
-        if not self.args.conditional:
-            fetches += [self.z]
 
         out = sess.run(fetches, feed_dict)
 

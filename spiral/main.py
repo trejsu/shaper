@@ -7,13 +7,13 @@ import tensorflow as tf
 
 import spiral.trainer as trainer
 import spiral.utils as ut
-from .envs import create_env
+from spiral.envs import create_env
 
 logger = ut.logging.get_logger()
 
 
 def main(_):
-    from .config import get_args
+    from spiral.config import get_args
     args = get_args()
 
     ut.train.set_global_seed(args.seed + args.task)
@@ -37,17 +37,8 @@ def main(_):
 
     env = create_env(args)
 
-    queue_shapes = [
-        ['actions', [len(env.action_sizes)]],
-        ['states', env.observation_shape],
-        ['rewards', []],
-        ['values', [1]],
-        ['features', [2, args.lstm_size]],
-    ]
-    if args.conditional:
-        queue_shapes.append(['conditions', env.observation_shape])
-    else:
-        queue_shapes.append(['z', [args.z_dim]])
+    queue_shapes = [['actions', [len(env.action_sizes)]], ['states', env.observation_shape], ['rewards', []],
+                    ['values', [1]], ['features', [2, args.lstm_size]], ['conditions', env.observation_shape]]
 
     for idx, (name, shape) in enumerate(queue_shapes):
         length = env.episode_length

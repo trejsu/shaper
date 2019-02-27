@@ -81,6 +81,7 @@ def get_args(group_name=None, parse_unknown=False):
     # Preprocess or filter args
     ##############################
     if args.loss == 'gan':
+        # todo: why??
         args.conditional = False
         assert args.num_workers > 2, "num_workers should be larger than 2 (policy, discriminator, worker)"
     elif args.loss == 'l2':
