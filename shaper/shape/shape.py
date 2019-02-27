@@ -44,10 +44,11 @@ class Shape(object):
         raise NotImplementedError
 
     @timeit
-    def render(self, img, target):
+    def render(self, img, target, color):
         bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
-        color = average_color(img=target, bounds=bounds)
+        if color is None:
+            color = average_color(img=target, bounds=bounds)
         alpha = self.get_alpha()
         assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
         render(img=img, bounds=bounds, color=color, alpha=alpha)

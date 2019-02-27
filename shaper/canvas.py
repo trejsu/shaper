@@ -50,10 +50,10 @@ class Canvas(object):
             self.fig.canvas.draw()
 
     @timeit
-    def add(self, shape):
+    def add(self, shape, color=None):
         self.prev_img = self.img.copy()
         self.prev_distance = self.distance.copy()
-        bounds = shape.render(self.img, self.target)
+        bounds = shape.render(self.img, self.target, color)
         self.update_distance(
             distance=self.distance,
             bounds=bounds,
@@ -105,7 +105,8 @@ class Canvas(object):
                     img.shape[0],
                     *normalized_params
                 )
-                shape.render(img=img, target=target)
+                # todo: save in size will render with average colors even if shapes were given in specific ones
+                shape.render(img=img, target=target, color=None)
 
             mimg.imsave(output, img.astype(np.uint8))
         else:
