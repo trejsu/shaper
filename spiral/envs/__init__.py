@@ -1,10 +1,10 @@
-from .shaper import Triangles
+from .shaper import MnistTriangles
 
 
 def create_env(args):
     env = args.env.lower()
     if env == 'shaper':
-        env = Triangles(args)
+        env = MnistTriangles(args)
     else:
         raise Exception("Unkown environment: {}".format(args.env))
     return env

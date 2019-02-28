@@ -71,7 +71,13 @@ def init():
         size=ARGS.resize,
         background=ARGS.background
     )
-    env = Environment(canvas=canvas, metric=ARGS.metric, num_shapes=ARGS.n, save_actions=ARGS.save_actions)
+
+    env = Environment(
+        canvas=canvas,
+        metric=ARGS.metric,
+        num_shapes=ARGS.n,
+        save_actions=ARGS.save_actions
+    )
 
     show = show_function(canvas)
     save = save_function(canvas, env)

@@ -95,8 +95,7 @@ class Discriminator(object):
 
     def build_optim(self):
         self.g_loss = -tf.reduce_mean(self.fake_logits)
-        self.critic_loss = \
-            tf.reduce_mean(self.fake_logits) - tf.reduce_mean(self.real_logits)
+        self.critic_loss = tf.reduce_mean(self.fake_logits) - tf.reduce_mean(self.real_logits)
 
         alpha = tf.random_uniform(
             [self.args.disc_batch_size, 1],

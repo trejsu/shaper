@@ -194,16 +194,14 @@ def env_runner(env, policy, num_local_steps, summary_writer):
         for _ in range(num_local_steps):
             c, h = last_features
 
-            fetched = policy.act(
-                last_state, last_action, c, h, condition, z)
+            fetched = policy.act(last_state, last_action, c, h, condition, z)
             action, value_, features = fetched[0], fetched[1], fetched[2:4]
 
             action = [np.argmax(action[name]) for name in env.acs]
             state, reward, terminal, info = env.step(action)
 
             # collect the experience
-            rollout.add(last_state, action, reward,
-                        value_, last_features, condition, z)
+            rollout.add(last_state, action, reward, value_, last_features, condition, z)
             length += 1
 
             # TODO: discriminator communication to get reward
@@ -221,9 +219,7 @@ def env_runner(env, policy, num_local_steps, summary_writer):
                 summary_writer.flush()
 
         last_state, condition, z = env.reset()
-        logger.debug(
-            "Episode finished. Sum of rewards: {:.5f}." \
-            "Length: {}.".format(rewards, length))
+        logger.debug("Episode finished. Sum of rewards: {:.5f}. Length: {}.".format(rewards, length))
 
         length = 0
         rewards = 0

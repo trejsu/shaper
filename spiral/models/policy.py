@@ -348,8 +348,7 @@ def res_block(x, channel, size, data_format, name):
 
 
 def categorical_sample(logits, d):
-    out = tf.multinomial(logits - \
-                         tf.reduce_max(logits, [1], keepdims=True), 1)
+    out = tf.multinomial(logits - tf.reduce_max(logits, [1], keepdims=True), 1)
     value = tf.squeeze(out, [1])
     return tf.one_hot(value, d), tf.cast(value, tf.float32)
 
