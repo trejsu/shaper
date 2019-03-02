@@ -3,12 +3,12 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shaper.shape import Curve
-from shaper.shape import Ellipse
-from shaper.shape import QuadrangleBrush, Quadrangle
-from shaper.shape import Rectangle
-from shaper.shape import Triangle
-from shaper.util import normalize
+from shapes.shape import Curve
+from shapes.shape import Ellipse
+from shapes.shape import QuadrangleBrush, Quadrangle
+from shapes.shape import Rectangle
+from shapes.shape import Triangle
+from shapes.util import normalize
 
 log = logging.getLogger(__name__)
 

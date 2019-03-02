@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 
-from shaper.util import MIN_VALUE
+from shapes.util import MIN_VALUE
 from .shape import Shape
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from shaper.shape.shape import crop_bounds
+from shapes.shape.shape import crop_bounds
 
 
 def test_should_leave_bounds_unchanged_if_no_need_to_crop():

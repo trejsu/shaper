@@ -7,7 +7,7 @@ import numpy as np
 from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
-from shaper.canvas import Canvas
+from shapes.canvas import Canvas
 
 ARGS = None
 

@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from config import ROOT_DIR
-from shaper.shape import Quadrangle
-from shaper.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img, hex_to_rgb
+from shapes.shape import Quadrangle
+from shapes.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img, hex_to_rgb
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [

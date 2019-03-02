@@ -1,6 +1,6 @@
 import numpy as np
 
-from shaper.shape import Triangle
+from shapes.shape import Triangle
 
 
 def test_from_normalized_params():

@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from shaper.util import l2_full, l1_full, update_l1, update_l2
+from shapes.util import l2_full, l1_full, update_l1, update_l2
 
 log = logging.getLogger(__name__)
 
