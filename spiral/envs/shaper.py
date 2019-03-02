@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+import spiral.utils as ut
 from shapes.canvas import Canvas
 from shapes.shape import Triangle
 from spiral.envs.base import Environment
@@ -114,7 +115,6 @@ class MnistTriangles(Environment):
 
 
 if __name__ == '__main__':
-    import spiral.utils as ut
     from spiral.config import get_args
 
     args = get_args()
