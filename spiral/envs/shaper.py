@@ -1,13 +1,10 @@
-from collections import defaultdict
-
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
 
-import spiral.envs.utils as utils
-import spiral.utils as ut
-from shaper.canvas import Canvas
-from .base import Environment
+from shapes.canvas import Canvas
+from shapes.shape import Triangle
+from spiral.envs.base import Environment
+from spiral.envs.utils import uniform_locations, l2_dist
 
 
 class MnistTriangles(Environment):
@@ -27,27 +24,42 @@ class MnistTriangles(Environment):
             ut.color.BLACK,
             ut.color.WHITE
         ]
-        self.colors = np.array(self.colors) / 255.
+        self.colors = np.array(self.colors)
         self.alphas = np.linspace(0.2, 1, 5)
-        self.p1s = utils.uniform_locations(self.screen_size, self.location_size, object_radius=0)
-        self.p2s = utils.uniform_locations(self.screen_size, self.location_size, object_radius=0)
-        self.p3s = utils.uniform_locations(self.screen_size, self.location_size, object_radius=0)
+        self.p1s = uniform_locations(self.screen_size, self.location_size)
+        self.p2s = uniform_locations(self.screen_size, self.location_size)
+        self.p3s = uniform_locations(self.screen_size, self.location_size)
 
-        self.target = None
         self.canvas = None
-        self.step = None
+        self.step_num = None
 
     @property
     def state(self):
         return self.canvas.img
 
-    def step(self, action):
-        pass
+    @property
+    def target(self):
+        return self.canvas.target
+
+    def step(self, ac):
+        self._draw(ac)
+        self.step_num += 1
+
+        terminal_action = (self.step_num == self.episode_length)
+        if terminal_action:
+            reward = 1
+            # todo: partial l2
+            l2 = l2_dist(self.state, self.target)
+            punishment = l2 / np.prod(self.observation_shape)
+            reward -= punishment
+        else:
+            reward = 0
+        return self.state, reward, terminal_action, {}
 
     def reset(self):
-        self.target = self.get_random_target(num=1, squeeze=True)
-        self.canvas = Canvas(target=self.target, size=self.screen_size, background=ut.color.WHITE)
-        self.step = 0
+        target = self.get_random_target(num=1, squeeze=True)
+        self.canvas = Canvas(target=target, size=self.screen_size, background=ut.color.WHITE)
+        self.step_num = 0
         # todo: find out how z is used (refer to paper)
         self.z = None
         return self.state, self.target, self.z
@@ -59,38 +71,69 @@ class MnistTriangles(Environment):
             random_image = np.squeeze(random_image, 0)
         return random_image
 
+    def get_action_desc(self, ac):
+        desc = []
+        for name in self.action_sizes:
+            named_ac = ac[self.ac_idx[name]]
+            actual_ac = getattr(self, name + "s")[named_ac]
+            desc.append(f"{name}: {actual_ac} ({named_ac})")
+        return "\n".join(desc)
+
     def _prepare_mnist(self):
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-        x_train, x_test = x_train / 255.0, x_test / 255.0
+        (x_train, _), (x_test, _) = tf.keras.datasets.mnist.load_data()
+        data = x_train if self.args.train else x_test
+        self.real_data = 255 - data
+
+    def save_image(self, path):
+        self.canvas.save(path)
+
+    def _draw(self, ac):
+        color = self.colors[0]
+        alpha = self.alphas[-1]
+        p1_x, p1_y = self.p1s[0]
+        p2_x, p2_y = self.p2s[0]
+        p3_x, p3_y = self.p3s[0]
+
+        for name in self.action_sizes:
+            named_action = ac[self.ac_idx[name]]
+            value = getattr(self, name + "s")[named_action]
+
+            if name == 'color':
+                color = value
+            elif name == 'alpha':
+                alpha = value
+            elif name == 'p1':
+                p1_x, p1_y = value
+            elif name == 'p2':
+                p2_x, p2_y = value
+            elif name == 'p3':
+                p3_x, p3_y = value
+
+        t = Triangle.from_params(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, alpha)
+        self.canvas.add(shape=t, color=color)
 
 
-        ut.io.makedirs(self.args.data_dir)
+if __name__ == '__main__':
+    import spiral.utils as ut
+    from spiral.config import get_args
 
-        mnist_dir = self.args.data_dir / 'mnist'
-        mnist = tf.contrib.learn.datasets.DATASETS['mnist'](str(mnist_dir))
+    args = get_args()
+    ut.train.set_global_seed(args.seed)
 
-        pkl_path = mnist_dir / 'mnist_dict.pkl'
+    env = MnistTriangles(args)
 
-        if pkl_path.exists():
-            mnist_dict = ut.io.load_pickle(pkl_path)
-        else:
-            mnist_dict = defaultdict(lambda: defaultdict(list))
-            for name in ['train', 'test', 'valid']:
-                for num in self.args.mnist_nums:
-                    filtered_data = mnist.train.images[mnist.train.labels == num]
-                    filtered_data = np.reshape(filtered_data, [-1, 28, 28])
+    for ep_idx in range(10):
+        step = 0
+        env.reset()
 
-                    iterator = tqdm(filtered_data, desc="[{}] Processing {}".format(name, num))
-                    for idx, image in enumerate(iterator):
-                        # XXX: don't know which way would be the best
-                        resized_image = ut.io.imresize(image, [self.height, self.width], interp='cubic')
-                        mnist_dict[name][num].append(np.expand_dims(resized_image, -1))
-            ut.io.dump_pickle(pkl_path, mnist_dict)
+        while True:
+            action = env.random_action()
+            print(f"[Step {step}] ac: {env.get_action_desc(action)}")
+            state, reward, terminal, info = env.step(action)
+            env.save_image(f"mnist{ep_idx}_{step}.png")
 
-        mnist_dict = mnist_dict['train' if self.args.train else 'test']
+            if terminal:
+                print(f"Ep #{ep_idx} finished ==> Reward: {reward}")
+                break
 
-        data = []
-        for num in self.args.mnist_nums:
-            data.append(mnist_dict[int(num)])
-
-        self.real_data = 255 - np.concatenate([d for d in data])
+            step += 1

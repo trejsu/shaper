@@ -14,16 +14,43 @@ log = logging.getLogger(__name__)
 
 class Canvas(object):
     def __init__(self, target, size, background):
-        self.target_path = target
+        target_img = self._get_target_img(target)
+        self.target = resize_to_size(img=target_img, size=size).astype(np.float)
+
         self.background = background
-        self.target = resize_to_size(img=read_img(target), size=size).astype(np.float)
-        self.color = average_color(self.target) if background is None else hex_to_rgb(background)
+        self.color = self._get_color(background)
+        print(f'Resolved color = {self.color}')
+
         self.img = np.full(self.target.shape, self.color, dtype=np.float)
+        assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
+
         self.showed = None
         self.fig = None
+
         log.debug(f'Initialized canvas with target shape: {self.target.shape}')
         log.debug(f'Target min: {np.min(self.target)}, target max: {np.max(self.target)}')
-        assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
+
+    def _get_color(self, background):
+        return average_color(self.target) if background is None \
+            else hex_to_rgb(background) if isinstance(background, str) \
+            else background
+
+    def _get_target_img(self, target):
+        if isinstance(target, str):
+            print(f'Initializing canvas with target path = {target}')
+            self.target_path = target
+            target_img = read_img(target)
+        else:
+            print(f'Initializing canvas with target array of shape = {target.shape}')
+            target_img = target
+
+        if len(target_img.shape) == 2:
+            target_img = target_img.reshape(target_img.shape[0], target_img.shape[1], 1)
+
+        if target_img.shape[2] == 1:
+            target_img = np.repeat(target_img, 3, axis=2)
+
+        return target_img
 
     def clear_and_resize(self, size):
         return Canvas(target=self.target_path, size=size, background=self.background)

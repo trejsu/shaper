@@ -22,14 +22,10 @@ model_arg.add_argument('--loss', default='gan', type=str,
 # environment
 env_arg = ut.args.add_argument_group(parser, 'environment')
 env_arg.add_argument('--env', default="shaper")
-env_arg.add_argument('--jump', default=True, type=ut.args.str2bool)
-env_arg.add_argument('--curve', default=True, type=ut.args.str2bool)
 env_arg.add_argument('--episode_length', default=5, type=int)
 env_arg.add_argument('--screen_size', default=64, type=int)
 env_arg.add_argument('--location_size', default=32, type=int)
 env_arg.add_argument('--color_channel', default=3, type=int, choices=[3, 1])
-env_arg.add_argument('--mnist_nums', default='0,1,2,3,4,5,6,7,8,9', type=ut.args.int_list)
-env_arg.add_argument('--brush_path', default='assets/brushes/dry_brush.myb', type=str)
 env_arg.add_argument('--conditional', default=True, type=ut.args.str2bool)
 
 # train

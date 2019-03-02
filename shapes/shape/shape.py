@@ -3,7 +3,7 @@ from abc import abstractmethod
 import numpy as np
 from numba import njit
 
-from shaper.util import MIN_VALUE
+from shapes.util import MIN_VALUE
 
 
 class Shape(object):
@@ -48,6 +48,8 @@ class Shape(object):
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
         if color is None:
             color = average_color(img=target, bounds=bounds)
+        if not isinstance(color, tuple):
+            color = tuple(color)
         alpha = self.get_alpha()
         assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
         render(img=img, bounds=bounds, color=color, alpha=alpha)
