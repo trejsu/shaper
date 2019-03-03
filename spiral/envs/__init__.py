@@ -6,5 +6,5 @@ def create_env(args):
     if env == 'shaper':
         env = MnistTriangles(args)
     else:
-        raise Exception("Unkown environment: {}".format(args.env))
+        raise Exception(f"Unknown environment: {args.env}")
     return env

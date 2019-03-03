@@ -10,8 +10,7 @@ tc = tf.nn.rnn_cell
 
 class Policy(object):
 
-    def __init__(self, args, env, scope_name,
-                 image_shape, action_sizes, data_format):
+    def __init__(self, args, env, scope_name, image_shape, action_sizes, data_format):
         self.args = args
         scale = args.scale
         self.lstm_size = args.lstm_size
@@ -24,12 +23,11 @@ class Policy(object):
         self.action_sizes = action_sizes
         self.data_format = data_format
 
-        action_num = len(action_sizes)
+        num_actions = len(action_sizes)
 
         with tf.variable_scope(scope_name) as scope:
             # [B, max_time, H, W, C]
-            self.x = x = tf.placeholder(
-                tf.float32, [None, None] + self.image_shape, name='x')
+            self.x = x = tf.placeholder(tf.float32, [None, None] + self.image_shape, name='x')
 
             # last is only used for summary
             x = x[:, :env.episode_length]
@@ -40,21 +38,19 @@ class Policy(object):
             batch_size, max_time = x_shape[0], x_shape[1]
 
             # [B, max_time, action_num]
-            self.ac = ac = tf.placeholder(
-                tf.float32, [None, None, action_num], name='ac')
+            self.action = action = tf.placeholder(tf.float32, [None, None, num_actions], name='ac')
 
             # [B, max_time, H, W, C]
-            self.c = c = tf.placeholder(
-                tf.float32, [None, None] + self.image_shape, name='c')
+            self.condition = condition = tf.placeholder(tf.float32, [None, None] + self.image_shape, name='c')
             # TODO: need to get confirmed from the authors
-            x = tf.concat([x, c], axis=-1)
+            x = tf.concat([x, condition], axis=-1)
             x_shape = list(self.image_shape)
             x_shape[-1] = int(x.get_shape()[-1])
 
             self.z = None
 
             x = tf.reshape(x, [-1] + x_shape)
-            ac = tf.reshape(ac, [-1, action_num])
+            action = tf.reshape(action, [-1, num_actions])
 
             if data_format == 'channels_first' and args.dynamic_channel:
                 x = tf.transpose(x, [0, 3, 1, 2])
@@ -63,43 +59,44 @@ class Policy(object):
             # Beginning of policy network
             ################################
 
-            a_enc = mlp(
-                tf.expand_dims(ac, -1),
-                int(16),
-                name="a_enc")
-            a_concat = tf.reshape(
-                a_enc, [-1, int(16) * action_num])
-            a_fc = tl.dense(
-                a_concat, int(32),
-                activation=tf.nn.relu,
-                name="a_concat_fc")
+            # MLP [16]
+            a_enc = mlp(x=tf.expand_dims(action, -1), dim=16, name="a_enc")
+
+            # Concat+FC [32]
+            a_concat = tf.reshape(a_enc, [-1, 16 * num_actions])
+            a_fc = tl.dense(a_concat, 32, activation=tf.nn.relu, name="a_concat_fc")
 
             # [B, 1, 1, 32]
             a_expand = tf.expand_dims(tf.expand_dims(a_fc, 1), 1)
             if data_format == 'channels_first' and args.dynamic_channel:
                 a_expand = tf.transpose(a_expand, [0, 3, 1, 2])
 
+            # Conv 5x5 [screen_size, screen_size, 32]
             x_enc = tl.conv2d(
-                x, int(32), 5,
+                x, 32, 5,
                 padding='same',
                 activation=tf.nn.relu,
                 data_format=self.data_format,
                 name="x_c_enc")
 
+            # Add [screen_size, screen_size, 32]
             add = x_enc + a_expand
 
-            for idx in range(int(3)):
+            # 3 x Conv 4x4 (stride=2) [./2, ./2, 32]
+            for idx in range(3):
                 add = tl.conv2d(
-                    add, int(32), 4, strides=(2, 2),
+                    add, 32, 4, strides=(2, 2),
                     padding='valid',
                     activation=tf.nn.relu,
                     data_format=self.data_format,
-                    name="add_enc_{}".format(idx))
+                    name=f"add_enc_{idx}"
+                )
 
             for idx in range(int(8 * scale)):
                 add = res_block(
                     add, 32, 3, self.data_format,
-                    name="encoder_res_{}".format(idx))
+                    name=f"encoder_res_{idx}"
+                )
 
             flat = tl.flatten(add)
 
@@ -168,12 +165,12 @@ class Policy(object):
     def get_feed_dict(self, ob, ac, c, h, condition, z):
         feed_dict = {
             self.x: [[ob]],  # fake batch, time axis
-            self.ac: [[ac]],
+            self.action: [[ac]],
             self.state_in[0]: [c],  # fake batch axis
             self.state_in[1]: [h],
         }
         if condition is not None:
-            feed_dict.update({self.c: [[condition]]})
+            feed_dict.update({self.condition: [[condition]]})
         if z is not None:
             feed_dict.update({self.z: [[z]]})
         return feed_dict
@@ -208,13 +205,13 @@ class Policy(object):
             # [batch*max_time, lstm_size]
             z_flat = tf.reshape(z, [-1, self.lstm_size])
 
-            with tf.variable_scope("decoder_{}".format(name)):
+            with tf.variable_scope(f"decoder_{name}"):
                 if len(action_size) == 1:
                     N = action_size[0]
                     logit = tl.dense(
                         z_flat, N,
                         activation=None,
-                        name="action{}".format(name),
+                        name=f"action{name}",
                         kernel_initializer= \
                             normalized_columns_initializer(0.01))
                 else:
@@ -238,7 +235,7 @@ class Policy(object):
                     for res_idx in range(int(8 * scale)):
                         res = res_block(
                             res, int(32), 3, data_format,
-                            name="decoder_res_{}".format(res_idx))
+                            name=f"decoder_res_{res_idx}")
 
                     # format: NHWC
                     deconv = res
@@ -261,7 +258,7 @@ class Policy(object):
                             padding='same',
                             activation=tf.nn.relu,
                             data_format='channels_last',
-                            name="deconv_{}".format(deconv_idx))
+                            name=f"deconv_{deconv_idx}")
 
                     # format: each
                     if data_format == 'channels_first' and transposed \
@@ -288,11 +285,11 @@ class Policy(object):
                 # [batch, max_time, action_size[name]]
                 one_hot_samples[name] = tf.reshape(
                     action_one_hot, [batch_size, max_time, -1],
-                    name="one_hot_samples_{}".format(name))
+                    name=f"one_hot_samples_{name}")
                 # [batch, max_time, 1]
                 samples[name] = tf.reshape(
                     action, [batch_size, max_time],
-                    name="samples_{}".format(name))
+                    name=f"samples_{name}")
 
                 if action_idx < len(action_sizes) - 1:
                     # this will be feeded to make gradient flows
@@ -323,11 +320,11 @@ def mlp(x, dim, hid_dim=64, num_layers=3, name=None):
         x = tl.dense(
             x, hid_dim,
             activation=tf.nn.relu,
-            name="{}_{}".format(name, idx))
+            name=f"{name}_{idx}")
     x = tl.dense(
         x, dim,
         activation=tf.nn.relu,
-        name="{}_{}".format(name, idx + 1))
+        name=f"{name}_{idx + 1}")
     return x
 
 

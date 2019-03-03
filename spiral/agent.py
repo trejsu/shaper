@@ -60,7 +60,7 @@ class Agent(object):
         ###########################
 
         device = 'gpu' if self.task == 0 else 'cpu'
-        master_gpu = "/job:worker/task:{}/{}:0".format(self.args.task, device)
+        master_gpu = f"/job:worker/task:{self.args.task}/{device}:0"
         master_gpu_replica = tf.train. \
             replica_device_setter(1, worker_device=master_gpu)
 
@@ -102,7 +102,7 @@ class Agent(object):
             # policy_batch_size = int(self.args.policy_batch_size \
             #        / self.env.episode_length)
 
-            worker_device = "/job:worker/task:{}/cpu:0".format(self.task)
+            worker_device = f"/job:worker/task:{self.task}/cpu:0"
             logger.debug(worker_device)
 
             with tf.device(worker_device):
@@ -115,13 +115,13 @@ class Agent(object):
         ###########################
         elif self.args.task == 1 and self.args.loss == 'gan':
             device = 'gpu' if args.num_gpu > 0 else 'cpu'
-            worker_device = "/job:worker/task:{}/{}:0".format(self.task, device)
+            worker_device = f"/job:worker/task:{self.task}/{device}:0"
             logger.debug(worker_device)
 
             with tf.device(worker_device):
                 self.prepare_gan()
 
-            worker_device = "/job:worker/task:{}/cpu:0".format(self.task)
+            worker_device = f"/job:worker/task:{self.task}/cpu:0"
             logger.debug(worker_device)
 
             with tf.device(worker_device):
@@ -133,86 +133,79 @@ class Agent(object):
         # Local policy network (task >= 2 (gan) or 1 (l2))
         #####################################################
         elif self.args.task >= 1:
-            worker_device = "/job:worker/task:{}/cpu:0".format(self.task)
+            worker_device = f"/job:worker/task:{self.task}/cpu:0"
             logger.debug(worker_device)
 
             with tf.device(worker_device):
                 self.prepare_local_network()
 
     def prepare_master_network(self):
-        self.global_network = pi = models.Policy(
-            self.args, self.env, "global",
-            self.input_shape, self.action_sizes,
-            data_format='channels_first' \
-                if self.args.dynamic_channel \
-                else 'channels_last')
+        self.global_network = global_network = models.Policy(
+            args=self.args,
+            env=self.env,
+            scope_name="global",
+            image_shape=self.input_shape,
+            action_sizes=self.action_sizes,
+            data_format='channels_first' if self.args.dynamic_channel else 'channels_last'
+        )
 
-        self.acs, acs = {}, {}
-        for idx, (name, action_size) in enumerate(
-                self.action_sizes.items()):
-            # [B, action_size]
-            self.acs[name] = tf.placeholder(
-                tf.int32, [None, None], name="{}_in".format(name))
-            acs[name] = tf.one_hot(self.acs[name], np.prod(action_size))
+        self.actions, actions = {}, {}
+        for idx, (name, action_size) in enumerate(self.action_sizes.items()):
+            self.actions[name] = tf.placeholder(tf.int32, [None, None], name=f"{name}_in")
+            actions[name] = tf.one_hot(self.actions[name], np.prod(action_size))
 
-        self.adv = adv = tf.placeholder(
-            tf.float32, [None, self.env.episode_length], name="adv")
-        self.r = r = tf.placeholder(
-            tf.float32, [None, self.env.episode_length], name="r")
-
-        bsz = tf.to_float(tf.shape(pi.x)[0])
+        self.advantage = advantage = tf.placeholder(tf.float32, [None, self.env.episode_length], name="adv")
+        self.reward = reward = tf.placeholder(tf.float32, [None, self.env.episode_length], name="r")
 
         ########################
         # Building optimizer
         ########################
 
         self.loss = 0
-        self.pi_loss, self.vf_loss, self.entropy = 0, 0, 0
+        self.policy_loss, self.value_loss, self.entropy = 0, 0, 0
 
         for name in self.action_sizes:
-            ac = acs[name]
-            logit = pi.logits[name]
+            action = actions[name]
+            logit = global_network.logits[name]
 
             log_prob_tf = tf.nn.log_softmax(logit)
             prob_tf = tf.nn.softmax(logit)
 
-            pi_loss = - tf.reduce_sum(
-                tf.reduce_sum(log_prob_tf * ac, [-1]) * adv)
+            policy_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * action, [-1]) * advantage)
 
             # loss of value function
-            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - r))
+            value_loss = 0.5 * tf.reduce_sum(tf.square(global_network.vf - reward))
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
-            self.loss += pi_loss + 0.5 * vf_loss - \
-                         entropy * self.args.entropy_coeff
-
-            self.pi_loss += pi_loss
-            self.vf_loss += vf_loss
+            self.loss += policy_loss + 0.5 * value_loss - entropy * self.args.entropy_coeff
+            self.policy_loss += policy_loss
+            self.value_loss += value_loss
             self.entropy += entropy
 
-        grads = tf.gradients(self.loss, pi.var_list)
+        grads = tf.gradients(self.loss, global_network.var_list)
 
         ##################
         # Summaries
         ##################
 
         # summarize only the last state
-        last_state = self.env.denorm(pi.x[:, -1])
-        last_state.set_shape(
-            [self.args.policy_batch_size] + ut.tf.int_shape(last_state)[1:])
+        last_state = self.env.denorm(global_network.x[:, -1])
+        last_state.set_shape([self.args.policy_batch_size] + ut.tf.int_shape(last_state)[1:])
+
+        bsz = tf.to_float(tf.shape(global_network.x)[0])
 
         summaries = [
             tf.summary.image("last_state", image_reshaper(last_state)),
-            tf.summary.scalar("env/r", tf.reduce_mean(self.r[:, -1])),
-            tf.summary.scalar("model/policy_loss", self.pi_loss / bsz),
-            tf.summary.scalar("model/value_loss", self.vf_loss / bsz),
+            tf.summary.scalar("env/r", tf.reduce_mean(self.reward[:, -1])),
+            tf.summary.scalar("model/policy_loss", self.policy_loss / bsz),
+            tf.summary.scalar("model/value_loss", self.value_loss / bsz),
             tf.summary.scalar("model/entropy", self.entropy / bsz),
             tf.summary.scalar("model/grad_global_norm", tf.global_norm(grads)),
-            tf.summary.scalar("model/var_global_norm", tf.global_norm(pi.var_list)),
+            tf.summary.scalar("model/var_global_norm", tf.global_norm(global_network.var_list)),
         ]
 
-        if pi.c is not None:
-            target = self.env.denorm(pi.c[:, -1])
+        if global_network.condition is not None:
+            target = self.env.denorm(global_network.condition[:, -1])
             target.set_shape(
                 [self.args.policy_batch_size] + ut.tf.int_shape(target)[1:])
 
@@ -220,7 +213,9 @@ class Agent(object):
                 tf.summary.image("target", image_reshaper(target)))
 
             self.l2_loss = tf.sqrt(1e-8 +
-                                   tf.reduce_sum(((pi.x[:, -1] - pi.c[:, -1]) / 255.) ** 2, [-3, -2, -1]))
+                                   tf.reduce_sum(
+                                       ((global_network.x[:, -1] - global_network.condition[:, -1]) / 255.) ** 2,
+                                       [-3, -2, -1]))
             summaries.append(
                 tf.summary.scalar("model/l2_loss", tf.reduce_mean(self.l2_loss)))
 
@@ -247,13 +242,13 @@ class Agent(object):
         ##########################
         self.trajectory_placeholders = {
             name: tf.placeholder(
-                tf.float32, dict(self.queue_shapes)[name],
-                name="{}_in".format(name)) \
-            for name, shape in self.queue_shapes
+                tf.float32,
+                dict(self.queue_shapes)[name], name=f"{name}_in"
+            ) for name, shape in self.queue_shapes
         }
-        self.trajectory_enqueues = self.trajectory_queue.enqueue(
-            {name: self.trajectory_placeholders[name] \
-             for name, _ in self.queue_shapes})
+        self.trajectory_enqueues = self.trajectory_queue.enqueue({
+            name: self.trajectory_placeholders[name] for name, _ in self.queue_shapes
+        })
 
         ##########################
         # Replay queue
@@ -343,18 +338,18 @@ class Agent(object):
 
         feed_dict = {
             # [B, ep_len]
-            self.r: batch.r,
-            self.adv: batch.adv,
+            self.reward: batch.r,
+            self.advantage: batch.adv,
             self.global_network.x: batch.si,
             # [B, ep_len, action_size]
-            self.global_network.ac: batch.a,
+            self.global_network.action: batch.a,
             self.global_network.state_in[0]: batch.features[:, 0],
             self.global_network.state_in[1]: batch.features[:, 1],
         }
         for name in self.action_sizes:
             name_a = batch.a[:, :, self.env.ac_idx[name]]
             feed_dict.update({
-                self.acs[name]: name_a,
+                self.actions[name]: name_a,
             })
             if name in self.global_network.samples:
                 feed_dict.update({
@@ -362,7 +357,7 @@ class Agent(object):
                 })
 
         feed_dict.update({
-            self.global_network.c: batch.c,
+            self.global_network.condition: batch.c,
         })
 
         #################
@@ -386,7 +381,7 @@ class Agent(object):
                 tf.Summary.FromString(out['summary']), out['step'])
             self.summary_writer.flush()
 
-            debug_text = "# traj: {}".format(out['policy_size'])
+            debug_text = f"# traj: {out['policy_size']}"
             if self.task == 0:
                 logger.info(debug_text)
             else:

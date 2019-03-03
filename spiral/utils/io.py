@@ -107,4 +107,4 @@ def load_pickle(path, num_split=1):
 
 def add_postfix(path, postfix):
     path_without_ext, ext = path.rsplit('.', 1)
-    return "{}.{}.{}".format(path_without_ext, postfix, ext)
+    return f"{path_without_ext}.{postfix}.{ext}"

@@ -219,7 +219,7 @@ def env_runner(env, policy, num_local_steps, summary_writer):
                 summary_writer.flush()
 
         last_state, condition, z = env.reset()
-        logger.debug("Episode finished. Sum of rewards: {:.5f}. Length: {}.".format(rewards, length))
+        logger.debug(f"Episode finished. Sum of rewards: {rewards:.5f}. Length: {length}.")
 
         length = 0
         rewards = 0

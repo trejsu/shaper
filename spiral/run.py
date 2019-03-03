@@ -10,7 +10,7 @@ import spiral.utils as ut
 def new_cmd(session, name, cmd, load_path, shell):
     if isinstance(cmd, (list, tuple)):
         cmd = " ".join(shlex_quote(str(v)) for v in cmd)
-    return name, "tmux send-keys -t {}:{} {} Enter".format(session, name, shlex_quote(cmd))
+    return name, f"tmux send-keys -t {session}:{name} {shlex_quote(cmd)} Enter"
 
 
 def create_commands(args, shell='bash'):
@@ -29,7 +29,7 @@ def create_commands(args, shell='bash'):
                ] + actual_args
 
     cmds_map = [
-        ("dummy", "tmux send-keys -t {}:0 Enter".format(args.tag)),
+        ("dummy", f"tmux send-keys -t {args.tag}:0 Enter"),
         new_cmd(args.tag, "ps", base_cmd + ["--job_name", "ps"], args.load_path, shell),
     ]
 
@@ -64,8 +64,8 @@ def create_commands(args, shell='bash'):
     notes = []
     cmds = []
 
-    notes += ["Use `tmux attach -t {}` to watch process output".format(args.tag)]
-    notes += ["Use `tmux kill-session -t {}` to kill the job".format(args.tag)]
+    notes += [f"Use `tmux attach -t {args.tag}` to watch process output"]
+    notes += [f"Use `tmux kill-session -t {args.tag}` to kill the job"]
 
     notes += ["Point your browser to http://localhost:12345 to see Tensorboard"]
 
@@ -78,7 +78,7 @@ def create_commands(args, shell='bash'):
         f"tmux new-session -s {args.tag} -n {windows[0]} -d {shell}",
     ]
     for w in windows[1:]:
-        cmds += ["tmux new-window -t {} -n {} {}".format(args.tag, w, shell)]
+        cmds += [f"tmux new-window -t {args.tag} -n {w} {shell}"]
     cmds += ["sleep 1"]
 
     for window, cmd in cmds_map:

@@ -68,9 +68,9 @@ class Discriminator(object):
                     activation=None,
                     data_format=self.data_format,
                     kernel_initializer=tf.keras.initializers.he_normal(),
-                    name="conv{}".format(idx))
+                    name=f"conv{idx}")
 
-                logger.info("conv: {} ({})".format(x.name, x.get_shape()))
+                logger.info(f"conv: {x.name} ({x.get_shape()})")
 
                 if idx > 0 and self.args.disc_batch_norm:
                     x = tl.batch_normalization(
@@ -86,7 +86,7 @@ class Discriminator(object):
                 kernel_initializer=tf.keras.initializers.glorot_normal(),
                 name="dense")
 
-            logger.info("logits: {} ({})".format(logits.name, logits.get_shape()))
+            logger.info(f"logits: {logits.name} ({logits.get_shape()})")
 
             logits = tf.reshape(logits, [-1])
             probs = tf.nn.sigmoid(logits)
