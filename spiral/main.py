@@ -18,8 +18,7 @@ def main(_):
 
     ut.train.set_global_seed(args.seed + args.task)
 
-    spec = ut.tf.cluster_spec(
-        args.num_workers, 1, args.start_port)
+    spec = ut.tf.cluster_spec(args.num_workers, 1, args.start_port)
     cluster = tf.train.ClusterSpec(spec)
     cluster_def = cluster.as_cluster_def()
 
@@ -65,10 +64,17 @@ def main(_):
     if args.job_name == "worker":
         gpu_options = tf.GPUOptions(allow_growth=True)
 
+        if args.task == 0:
+            intra_threads = args.master_policy_cpu
+            inter_threads = args.master_policy_cpu
+        else:
+            intra_threads = 1
+            inter_threads = 2
+
         tf_config = tf.ConfigProto(
             allow_soft_placement=True,
-            intra_op_parallelism_threads=1,
-            inter_op_parallelism_threads=2,
+            intra_op_parallelism_threads=intra_threads,
+            inter_op_parallelism_threads=inter_threads,
             gpu_options=gpu_options)
 
         server = tf.train.Server(

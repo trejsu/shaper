@@ -49,6 +49,7 @@ dist_arg.add_argument('--job_name', default="worker")
 dist_arg.add_argument('--num_workers', default=4, type=int)
 dist_arg.add_argument('--start_port', default=13333, type=int)
 dist_arg.add_argument('--tag', default='spiral', type=str)
+dist_arg.add_argument('--master_policy_cpu', default=1, type=int)
 
 # Misc
 misc_arg = ut.args.add_argument_group(parser, 'misc')
