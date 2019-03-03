@@ -10,12 +10,12 @@ from . import io
 from . import logging
 from . import misc
 
-PARAM_FNAME = "params.json"
+PARAM_FILENAME = "params.json"
 
 logger = logging.get_logger()
 
 
-def set_global_seed(seed, tensorflow=False, tf=False, pytorch=False):
+def set_global_seed(seed, tensorflow=False, tf=False):
     if tf or tensorflow:
         try:
             import tensorflow as tf
@@ -23,16 +23,6 @@ def set_global_seed(seed, tensorflow=False, tf=False, pytorch=False):
             pass
         else:
             tf.set_random_seed(seed)
-
-    if pytorch:
-        try:
-            import torch as th
-        except ImportError:
-            pass
-        else:
-            th.manual_seed(seed)
-            if th.cuda.is_available():
-                th.cuda.manual_seed(seed)
 
     random.seed(seed)
     np.random.seed(seed)
@@ -46,7 +36,7 @@ def prepare_dirs(args):
             load_path = Path(f"{str(args.log_dir)}/{args.load_path}")
         args.model_name = load_path.name
     else:
-        model_desc = io.get_cmd().replace(" ", "|")
+        model_desc = io.get_cmd().replace(" ", "_").replace("--", "_")
         hash_text = misc.get_hash(6)
         args.hash_text = hash_text
 
@@ -64,7 +54,7 @@ def prepare_dirs(args):
 
 def save_args(args):
     load_path = Path(args.load_path)
-    param_path = load_path / PARAM_FNAME
+    param_path = load_path / PARAM_FILENAME
 
     info = {k: str(v) if isinstance(v, Path) else v for k, v in args.__dict__.items()}
     with open(str(param_path), 'w') as f:
@@ -74,12 +64,12 @@ def save_args(args):
     with open(str(cmd_path), 'w') as f:
         f.write(io.get_cmd())
 
-    logger.info(f"Saved {PARAM_FNAME}: {param_path}")
+    logger.info(f"Saved {PARAM_FILENAME}: {param_path}")
 
 
 def update_args(args, key, new_value):
     load_path = Path(args.load_path)
-    param_path = load_path / PARAM_FNAME
+    param_path = load_path / PARAM_FILENAME
 
     if param_path.exists():
         with open(param_path) as f:
@@ -99,7 +89,7 @@ def update_args(args, key, new_value):
 # XXX: actually `skip_list` is quite important during test time
 def load_args(args, skip_list=['load_path', 'test_epoch', 'test_dataset', 'train']):
     args_keys = vars(args).keys()
-    args_path = os.path.join(args.load_path, PARAM_FNAME)
+    args_path = os.path.join(args.load_path, PARAM_FILENAME)
 
     with open(args_path) as f:
         saved_args = json.load(f)
