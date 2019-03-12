@@ -19,7 +19,6 @@ class Canvas(object):
 
         self.background = background
         self.color = self._get_color(background)
-        print(f'Resolved color = {self.color}')
 
         self.img = np.full(self.target.shape, self.color, dtype=np.float)
         assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
@@ -37,11 +36,9 @@ class Canvas(object):
 
     def _get_target_img(self, target):
         if isinstance(target, str):
-            print(f'Initializing canvas with target path = {target}')
             self.target_path = target
             target_img = read_img(target)
         else:
-            print(f'Initializing canvas with target array of shape = {target.shape}')
             target_img = target
 
         if len(target_img.shape) == 2:
