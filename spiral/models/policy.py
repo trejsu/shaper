@@ -12,16 +12,18 @@ class Policy(object):
 
     def __init__(self, args, env, scope_name, image_shape, action_sizes, data_format):
         self.args = args
-        scale = args.scale
+        self.scale = args.scale
         self.lstm_size = args.lstm_size
 
-        if data_format == 'channels_first' and args.dynamic_channel:
+        self.data_format = data_format
+        self.channels_first = data_format == 'channels_first' and self.args.dynamic_channel
+
+        if self.channels_first:
             self.image_shape = list(image_shape[-1:] + image_shape[:-1])
         else:
             self.image_shape = list(image_shape)
 
         self.action_sizes = action_sizes
-        self.data_format = data_format
 
         num_actions = len(action_sizes)
 
@@ -52,7 +54,7 @@ class Policy(object):
             x = tf.reshape(x, [-1] + x_shape)
             action = tf.reshape(action, [-1, num_actions])
 
-            if data_format == 'channels_first' and args.dynamic_channel:
+            if self.channels_first:
                 x = tf.transpose(x, [0, 3, 1, 2])
 
             ################################
@@ -68,7 +70,7 @@ class Policy(object):
 
             # [B, 1, 1, 32]
             a_expand = tf.expand_dims(tf.expand_dims(a_fc, 1), 1)
-            if data_format == 'channels_first' and args.dynamic_channel:
+            if self.channels_first:
                 a_expand = tf.transpose(a_expand, [0, 3, 1, 2])
 
             # Conv 5x5 [screen_size, screen_size, 32]
@@ -92,56 +94,33 @@ class Policy(object):
                     name=f"add_enc_{idx}"
                 )
 
-            for idx in range(int(8 * scale)):
+            # 8 x ResBlock 3x3 [8, 8, 32]
+            for idx in range(int(8 * self.scale)):
                 add = res_block(
                     add, 32, 3, self.data_format,
                     name=f"encoder_res_{idx}"
                 )
 
+            # Flatten+FC [lstm_size]
             flat = tl.flatten(add)
-
             out = tl.dense(
                 flat, self.lstm_size,
                 activation=tf.nn.relu,
-                name="flat_fc")
+                name="flat_fc"
+            )
 
-            # [batch_size, max_time, ...]
-            flat_out = tl.flatten(out)
-            lstm_in_shape = [batch_size, max_time, flat_out.get_shape()[-1]]
-            lstm_in = tf.reshape(flat_out, lstm_in_shape, name="lstm_in")
+            # LSTM [lstm_size]
+            lstm_out, lstm_state = self.create_lstm(batch_size, max_time, out)
 
-            self.lstm = tc.BasicLSTMCell(self.lstm_size, state_is_tuple=True)
-
-            def make_init(batch_size):
-                c_init = np.zeros((batch_size, self.lstm.state_size.c), np.float32)
-                h_init = np.zeros((batch_size, self.lstm.state_size.h), np.float32)
-                return [c_init, h_init]
-
-            self.state_init = ut.misc.keydefaultdict(make_init)
-
-            c_in = tf.placeholder(
-                tf.float32,
-                [None, self.lstm.state_size.c],
-                name="lstm_c_in")
-            h_in = tf.placeholder(
-                tf.float32,
-                [None, self.lstm.state_size.h],
-                name="lstm_h_in")
-            self.state_in = [c_in, h_in]
-            state_in = tc.LSTMStateTuple(c_in, h_in)
-
-            lstm_out, lstm_state = tf.nn.dynamic_rnn(
-                self.lstm,
-                # [batch_size, max_time, ...]
-                lstm_in,
-                # [batch_size, cell.state_size]
-                initial_state=state_in,
-                time_major=False)
-
+            # Decoder
             # [bach_size, max_time, action_size]
             self.one_hot_samples, self.samples, self.logits = self.decoder(
-                tf.nn.relu(lstm_out), self.action_sizes,
-                self.data_format, self.lstm_size, scale)
+                z=tf.nn.relu(lstm_out),
+                action_sizes=self.action_sizes,
+                data_format=self.data_format,
+                lstm_size=self.lstm_size,
+                scale=self.scale
+            )
 
             lstm_c, lstm_h = lstm_state
             self.state_out = [lstm_c, lstm_h]
@@ -153,6 +132,38 @@ class Policy(object):
             # kernel_initializer=normalized_columns_initializer(1.0))[:,:,0]
 
             self.var_list = tf.trainable_variables(scope=scope_name)
+
+    def create_lstm(self, batch_size, max_time, out):
+        # [batch_size, max_time, ...]
+        flat_out = tl.flatten(out)
+        lstm_in_shape = [batch_size, max_time, flat_out.get_shape()[-1]]
+        lstm_in = tf.reshape(flat_out, lstm_in_shape, name="lstm_in")
+        self.lstm = tc.BasicLSTMCell(self.lstm_size, state_is_tuple=True)
+
+        def make_init(batch_size):
+            c_init = np.zeros((batch_size, self.lstm.state_size.c), np.float32)
+            h_init = np.zeros((batch_size, self.lstm.state_size.h), np.float32)
+            return [c_init, h_init]
+
+        self.state_init = ut.misc.keydefaultdict(make_init)
+        c_in = tf.placeholder(
+            tf.float32,
+            [None, self.lstm.state_size.c],
+            name="lstm_c_in")
+        h_in = tf.placeholder(
+            tf.float32,
+            [None, self.lstm.state_size.h],
+            name="lstm_h_in")
+        self.state_in = [c_in, h_in]
+        state_in = tc.LSTMStateTuple(c_in, h_in)
+        lstm_out, lstm_state = tf.nn.dynamic_rnn(
+            self.lstm,
+            # [batch_size, max_time, ...]
+            lstm_in,
+            # [batch_size, cell.state_size]
+            initial_state=state_in,
+            time_major=False)
+        return lstm_out, lstm_state
 
     def get_initial_features(self, batch_size, flat=False):
         assert batch_size == 1 and flat, \
@@ -194,7 +205,7 @@ class Policy(object):
             out[idx] = item
         return out
 
-    def decoder(self, z, action_sizes, data_format, lstm_size, scale=1):
+    def decoder(self, z, action_sizes):
         # [batch, max_time, lstm_size]
         z_shape = tf.shape(z)
         batch_size, max_time = z_shape[0], z_shape[1]
@@ -206,90 +217,29 @@ class Policy(object):
             z_flat = tf.reshape(z, [-1, self.lstm_size])
 
             with tf.variable_scope(f"decoder_{name}"):
+
                 if len(action_size) == 1:
-                    N = action_size[0]
-                    logit = tl.dense(
-                        z_flat, N,
-                        activation=None,
-                        name=f"action{name}",
-                        kernel_initializer= \
-                            normalized_columns_initializer(0.01))
+                    logit = self.decode_scalar(action_size, name, z_flat)
                 else:
-                    # format: NHWC
-                    reshape = tf.reshape(z_flat, [-1, 4, 4, int(lstm_size / 16)])
+                    logit = self.decode_location(action_size, z_flat)
 
-                    # format: NHWC
-                    res = deconv = tl.conv2d_transpose(
-                        reshape, int(32), 4,
-                        strides=(2, 2),
-                        padding='same',
-                        activation=tf.nn.relu,
-                        data_format='channels_last')
+                logits[name] = tf.reshape(logit, [batch_size, max_time, -1])
 
-                    if data_format == 'channels_first' \
-                            and self.args.dynamic_channel:
-                        # format: NHWC -> NCHW
-                        res = tf.transpose(res, [0, 3, 1, 2])
-
-                    # format: each
-                    for res_idx in range(int(8 * scale)):
-                        res = res_block(
-                            res, int(32), 3, data_format,
-                            name=f"decoder_res_{res_idx}")
-
-                    # format: NHWC
-                    deconv = res
-                    transposed = False
-                    for deconv_idx in range(int(2)):
-                        deconv_width = int(deconv.get_shape()[2])
-                        if deconv_width == action_size[0]:
-                            break
-
-                        # format: NCHW -> NHWC 
-                        if deconv_idx == 0 and data_format == 'channels_first' \
-                                and self.args.dynamic_channel:
-                            transposed = True
-                            deconv = tf.transpose(deconv, [0, 2, 3, 1])
-
-                        # format: NHWC
-                        deconv = tl.conv2d_transpose(
-                            deconv, int(32), 4,
-                            strides=(2, 2),
-                            padding='same',
-                            activation=tf.nn.relu,
-                            data_format='channels_last',
-                            name=f"deconv_{deconv_idx}")
-
-                    # format: each
-                    if data_format == 'channels_first' and transposed \
-                            and self.args.dynamic_channel:
-                        # format: NHWC -> NCHW
-                        deconv = tf.transpose(deconv, [0, 3, 1, 2])
-
-                    # format: each
-                    conv = tl.conv2d(
-                        deconv, 1, 3,
-                        padding='same',
-                        activation=None,
-                        data_format=data_format,
-                        name="conv_1x1")
-
-                    logit = tl.flatten(conv)
-
-                logits[name] = tf.reshape(
-                    logit, [batch_size, max_time, -1])
-
-                action_one_hot, action = \
-                    categorical_sample(logit, np.prod(action_size))
+                action_one_hot, action = categorical_sample(logit, np.prod(action_size))
 
                 # [batch, max_time, action_size[name]]
                 one_hot_samples[name] = tf.reshape(
-                    action_one_hot, [batch_size, max_time, -1],
-                    name=f"one_hot_samples_{name}")
+                    action_one_hot,
+                    [batch_size, max_time, -1],
+                    name=f"one_hot_samples_{name}"
+                )
+
                 # [batch, max_time, 1]
                 samples[name] = tf.reshape(
-                    action, [batch_size, max_time],
-                    name=f"samples_{name}")
+                    action,
+                    [batch_size, max_time],
+                    name=f"samples_{name}"
+                )
 
                 if action_idx < len(action_sizes) - 1:
                     # this will be feeded to make gradient flows
@@ -298,20 +248,85 @@ class Policy(object):
                         name='sample_mlp')
                     # [batch, max_time, lstm_size]
                     z = tl.dense(
-                        tf.concat([z, out], -1), int(lstm_size),
+                        tf.concat([z, out], -1), self.lstm_size,
                         activation=tf.nn.relu,
                         name="concat_z_fc")
 
         return one_hot_samples, samples, logits
 
-    # def value(self, ob, c, h):
-    #    sess = tf.get_default_session()
-    #    feed_dict = {
-    #            self.x: [[ob]],
-    #            self.state_in[0]: c,
-    #            self.state_in[1]: h,
-    #    }
-    #    return sess.run(self.vf, feed_dict)[0][0]
+    def decode_location(self, action_size, z_flat):
+        # Reshape [4, 4, lstm_size / 16]
+        # format: NHWC
+        reshape = tf.reshape(z_flat, [-1, 4, 4, self.lstm_size // 16])
+
+        # format: NHWC
+        res = tl.conv2d_transpose(
+            reshape, 32, 4,
+            strides=(2, 2),
+            padding='same',
+            activation=tf.nn.relu,
+            data_format='channels_last'
+        )
+
+        if self.channels_first:
+            # format: NHWC -> NCHW
+            res = tf.transpose(res, [0, 3, 1, 2])
+
+        # ResBlock 3x3 [8, 8, 32]
+        # format: each
+        for res_idx in range(int(8 * self.scale)):
+            res = res_block(
+                res, 32, 3, self.data_format,
+                name=f"decoder_res_{res_idx}"
+            )
+
+        # Deconv 4x4 (stride=2) [.*2, .*2, 32]
+        # format: NHWC
+        deconv = res
+        transposed = False
+        for deconv_idx in range(2):
+            deconv_width = int(deconv.get_shape()[2])
+            if deconv_width == action_size[0]:
+                break
+
+            # format: NCHW -> NHWC
+            if deconv_idx == 0 and self.channels_first:
+                transposed = True
+                deconv = tf.transpose(deconv, [0, 2, 3, 1])
+
+            # format: NHWC
+            deconv = tl.conv2d_transpose(
+                deconv, int(32), 4,
+                strides=(2, 2),
+                padding='same',
+                activation=tf.nn.relu,
+                data_format='channels_last',
+                name=f"deconv_{deconv_idx}")
+
+        # Conv 3x3 [32, 32, 1] todo
+        # format: each
+        if self.channels_first and transposed:
+            # format: NHWC -> NCHW
+            deconv = tf.transpose(deconv, [0, 3, 1, 2])
+        # format: each
+        conv = tl.conv2d(
+            deconv, 1, 3,
+            padding='same',
+            activation=None,
+            data_format=self.data_format,
+            name="conv_1x1")
+
+        # Reshape [32 * 32] todo: 32 == location_size
+        return tl.flatten(conv)
+
+    def decode_scalar(self, action_size, name, z_flat):
+        N = action_size[0]
+        return tl.dense(
+            z_flat, N,
+            activation=None,
+            name=f"action{name}",
+            kernel_initializer=normalized_columns_initializer(0.01)
+        )
 
 
 # TODO: not sure what this architecture is (1)
