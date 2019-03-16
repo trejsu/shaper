@@ -77,9 +77,7 @@ def update_l1(distance, bounds, img, target):
 
 def normalize(arr):
     arr_minus_mean = np.array(arr) - np.mean(arr)
-    if np.all(arr_minus_mean == 0):
-        return np.zeros(arr_minus_mean.shape)
-    return arr_minus_mean / np.std(arr)
+    return arr_minus_mean if np.all(arr_minus_mean == 0) else arr_minus_mean / np.std(arr)
 
 
 @njit("i8[:,:](i8[:,:])")

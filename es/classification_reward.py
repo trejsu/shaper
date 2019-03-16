@@ -3,8 +3,10 @@ import logging
 import time
 
 import numpy as np
+import tensorflow as tf
+from tqdm import tqdm
 
-from es.environment import DistanceEnvironment
+from es.environment import ClassificationEnvironment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
@@ -15,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
-def main():
+def main(_):
     env, show, save = init()
     start = time.time()
 
@@ -28,20 +30,22 @@ def main():
         decay=ARGS.scale_decay
     )
 
-    for i in range(1, ARGS.n + 1):
+    for i in tqdm(range(1, ARGS.n + 1)):
         best_score, best_shape = find_best_shape(env=env, strategy=random, action=i)
+        print(f'score for best random shape = {best_score}')
 
         strategy = pick_strategy(best_shape=best_shape, env=env)
 
         for j in range(1, ARGS.step + 1):
             score, shape = find_best_shape(env=env, strategy=strategy)
+            print(f'score for best shape in {j}th step = {score}')
 
             if score < best_score:
                 best_score = score
                 best_shape = shape
 
-        score = env.step(best_shape)
-        log.info(f'Action {i}, new score: {score:.4f}')
+        env.step(best_shape)
+        log.info(f'Action {i}, new score: {best_score:.4f}')
 
         show()
 
@@ -59,7 +63,7 @@ def main():
 
 def find_best_shape(env, strategy, action=None):
     shapes = strategy.ask() if action is None else strategy.ask(action=action)
-    scores = [env.evaluate(shape) for shape in shapes]
+    scores = env.evaluate_batch(shapes)
     strategy.tell(scores)
     shape, score = strategy.result()
     return score, shape
@@ -72,18 +76,16 @@ def init():
         background=ARGS.background
     )
 
-    env = DistanceEnvironment(
+    env = ClassificationEnvironment(
         canvas=canvas,
-        metric=ARGS.metric,
         num_shapes=ARGS.n,
-        save_actions=ARGS.save_actions
+        save_actions=ARGS.save_actions,
+        label=ARGS.label
     )
 
     show = show_function(canvas)
     save = save_function(canvas, env)
 
-    score = env.init()
-    log.info(f'Initial score: {score}')
     return env, show, save
 
 
@@ -151,16 +153,17 @@ def save_final():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--n', type=int, help='Number of triangles to draw', required=True)
-    parser.add_argument('--input', type=str, help='Target image', required=True)
-    parser.add_argument('--output', type=str, help='Output image')
+    parser.add_argument('--n', type=int, help='Number of triangles to draw', default=10)
+    parser.add_argument('--input', type=str, help='Target image',
+                        default='./data/mnist/mnist-3.png')
+    parser.add_argument('--output', type=str, help='Output image', default='out.jpg')
     parser.add_argument('--render-mode', type=int,
                         help='Render mode: 0 - click, 1 - automatic, 2 - no render',
                         choices=[0, 1, 2], default=2)
     parser.add_argument('--alpha', type=float, help="Alpha value [0, 1]", default=0.5)
     parser.add_argument('--random', type=int, default=100)
     parser.add_argument('--sample', type=int, default=10)
-    parser.add_argument('--step', type=int, default=100)
+    parser.add_argument('--step', type=int, default=10)
     parser.add_argument('--learning-rate', type=float, default=4.64)
     parser.add_argument('--sigma-factor', type=float, default=0.03)
     parser.add_argument('--algorithm', type=str, choices=['random', 'simple', 'natural'],
@@ -174,8 +177,8 @@ if __name__ == '__main__':
     parser.add_argument('--resize', type=int,
                         help='Size to which input will be scaled before drawing - the bigger the '
                              'longer it will take but the more details can be captured',
-                        default=100)
-    parser.add_argument('--output-size', type=int, help='Output image size', default=512)
+                        default=28)
+    parser.add_argument('--output-size', type=int, help='Output image size', default=28)
     parser.add_argument('--time', action='store_true', default=False)
     parser.add_argument('--save-actions', action='store_true', default=False,
                         help="When not present, output-size "
@@ -186,6 +189,7 @@ if __name__ == '__main__':
     parser.add_argument('--background', type=str,
                         help='Initial background color (hex value without #), if not passed, '
                              'will be the average target img color')
+    parser.add_argument('--label', type=int, default=3)
     ARGS = parser.parse_args()
 
     seed = ARGS.seed if ARGS.seed is not None else np.random.randint(0, 2 ** 32)
@@ -194,6 +198,6 @@ if __name__ == '__main__':
     ARGS.rng = rng
 
     try:
-        main()
+        tf.app.run()
     except Exception as e:
         logging.exception("")
