@@ -88,7 +88,6 @@ class SimpleEvolutionStrategy(Strategy):
             params = [self.rng.normal(loc=mean, scale=sigma) for mean, sigma in
                       zip(self.mean, self.sigma)]
             shapes.append(self.shape.from_params(*params, self.alpha))
-            print(shapes)
         return self.shapes
 
     def tell(self, scores):
@@ -106,7 +105,8 @@ class EvolutionStrategy(Strategy):
         super().__init__(w, h, alpha, shape_mode, rng)
         self.n = n
 
-        self.sigma = sigma_factor * initial_shape.params_intervals()(w=self.w, h=self.h)
+        intervals = initial_shape.params_intervals()(w=self.w, h=self.h)
+        self.sigma = sigma_factor * intervals
         self.shape = initial_shape.__class__
         self.optimizer = optimizer
 

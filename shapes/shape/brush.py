@@ -14,28 +14,29 @@ class Brush(Shape):
     SIZE_SCALE = 4
 
     def __init__(self, path, size, alpha):
+        super().__init__()
         self.path = path
         self.size = max(1, int(size))
         self.alpha = alpha
 
     @classmethod
-    def random(cls, w, h, alpha, rng, scale=1):
+    def _random(cls, w, h, alpha, rng, scale=1):
         path = Curve.random(w=w, h=h, alpha=alpha, rng=rng, scale=scale)
         size = rng.randint(1, min(w, h) // Brush.SIZE_SCALE) * scale
         return cls(path=path, size=size, alpha=alpha)
 
     @classmethod
-    def from_params(cls, *params):
+    def _from_params(cls, *params):
         return cls(
-            path=Curve.from_params(*params[:-2], params[-1]),
+            path=Curve._from_params(*params[:-2], params[-1]),
             size=params[-2],
             alpha=params[-1]
         )
 
     @classmethod
-    def from_normalized_params(cls, w, h, *params):
+    def _from_normalized_params(cls, w, h, *params):
         return cls(
-            path=Curve.from_normalized_params(w, h, *params[:-2], params[-1]),
+            path=Curve._from_normalized_params(w, h, *params[:-2], params[-1]),
             size=int(params[-2] * (min(w, h) // Brush.SIZE_SCALE)),
             alpha=params[-1]
         )
@@ -46,16 +47,16 @@ class Brush(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def params(self):
-        return np.append(self.path.params(), self.size)
+    def _params(self):
+        return np.append(self.path._params(), self.size)
 
-    def normalized_params(self, w, h):
-        return np.append(self.path.normalized_params(w, h)[:-1],
+    def _normalized_params(self, w, h):
+        return np.append(self.path._normalized_params(w, h)[:-1],
                          [self.size / (min(w, h) // Brush.SIZE_SCALE), self.alpha])
 
     @staticmethod
-    def params_intervals():
-        return lambda w, h: np.append(Curve.params_intervals()(w, h), min(w, h) // Brush.SIZE_SCALE)
+    def _params_intervals():
+        return lambda w, h: np.append(Curve._params_intervals()(w, h), min(w, h) // Brush.SIZE_SCALE)
 
     def __str__(self):
         return f'Brush(path={self.path}, size={self.size})'

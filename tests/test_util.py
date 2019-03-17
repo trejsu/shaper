@@ -99,7 +99,7 @@ def test_broken_partial_l2(x1, y1, x2, y2, x3, y3, x4, y4):
         points=np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]], dtype=np.int64),
         alpha=0.5
     )
-    bounds = r.render(img, target, None)
+    bounds = r.render(img, target)
     update_l2(distance=distance, bounds=bounds, img=img, target=target)
     assert np.array_equal(distance, l2_full(target, img))
     assert np.average(distance) == np.average(l2_full(target, img))

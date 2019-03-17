@@ -11,6 +11,7 @@ from .triangle import rasterize_triangle
 class Quadrangle(Shape):
 
     def __init__(self, points, alpha):
+        super().__init__()
         self.points = points.astype(np.int64)
         self.alpha = alpha
 
@@ -19,7 +20,7 @@ class Quadrangle(Shape):
             f'D={self.points[3]})'
 
     @staticmethod
-    def random(w, h, alpha, rng, scale=1):
+    def _random(w, h, alpha, rng, scale=1):
         r = rng.randint(min(w, h) // 2)
         cx = rng.randint(w)
         cy = rng.randint(h)
@@ -35,11 +36,11 @@ class Quadrangle(Shape):
         return Quadrangle(points, alpha)
 
     @staticmethod
-    def from_params(*params):
+    def _from_params(*params):
         return Quadrangle(points=np.array(params[:-1]).reshape(4, 2), alpha=params[-1])
 
     @staticmethod
-    def from_normalized_params(w, h, *params):
+    def _from_normalized_params(w, h, *params):
         points = np.empty(shape=(4, 2))
         points[:, 0] = [int(x * w) for x in params[:-1][::2]]
         points[:, 1] = [int(y * h) for y in params[:-1][1::2]]
@@ -54,7 +55,7 @@ class Quadrangle(Shape):
         return Quadrangle(points=points, alpha=alpha)
 
     @staticmethod
-    def params_intervals():
+    def _params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h, w, h])
 
     def get_bounds(self, h=None, w=None):
@@ -63,10 +64,10 @@ class Quadrangle(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def params(self):
+    def _params(self):
         return self.points.reshape(-1, ).astype(np.float64)
 
-    def normalized_params(self, w, h):
+    def _normalized_params(self, w, h):
         return np.append(
             self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h, w, h]),
             self.alpha
@@ -76,6 +77,7 @@ class Quadrangle(Shape):
 class Rectangle(Shape):
 
     def __init__(self, cx, cy, w, h, rotation, alpha):
+        super().__init__()
         self.cx = int(cx)
         self.cy = int(cy)
         self.w = max(1, int(w))
@@ -87,7 +89,7 @@ class Rectangle(Shape):
         return f'Rectangle(cx={self.cx}, cy={self.cy}, w={self.w}, h={self.h}, rotation={self.rotation})'
 
     @staticmethod
-    def random(w, h, alpha, rng, scale=1):
+    def _random(w, h, alpha, rng, scale=1):
         cx = rng.randint(w)
         cy = rng.randint(h)
         rw = rng.randint(1, w) * scale
@@ -96,11 +98,11 @@ class Rectangle(Shape):
         return Rectangle(cx=cx, cy=cy, w=rw, h=rh, rotation=rot, alpha=alpha)
 
     @staticmethod
-    def from_params(*params):
+    def _from_params(*params):
         return Rectangle(*params)
 
     @staticmethod
-    def from_normalized_params(w, h, *params):
+    def _from_normalized_params(w, h, *params):
         return Rectangle(
             cx=int(params[0] * w),
             cy=(params[1] * h),
@@ -116,10 +118,10 @@ class Rectangle(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def params(self):
+    def _params(self):
         return np.array([self.cx, self.cy, self.w, self.h, self.rotation], dtype=np.float64)
 
-    def normalized_params(self, w, h):
+    def _normalized_params(self, w, h):
         return np.append(
             np.array([self.cx, self.cy, self.w, self.h, self.rotation], dtype=np.float64) /
             np.array([w, h, w, h, math.pi]),
@@ -127,7 +129,7 @@ class Rectangle(Shape):
         )
 
     @staticmethod
-    def params_intervals():
+    def _params_intervals():
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 
 

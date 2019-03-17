@@ -8,6 +8,7 @@ from .shape import Shape
 class Curve(Shape):
 
     def __init__(self, points, alpha):
+        super().__init__()
         self.points = points.astype(np.int64)
         self.alpha = alpha
 
@@ -15,7 +16,7 @@ class Curve(Shape):
         return f'Curve(P0={self.points[0]}, P1={self.points[1]}, P2={self.points[2]})'
 
     @staticmethod
-    def random(w, h, alpha, rng, scale=1):
+    def _random(w, h, alpha, rng, scale=1):
         xs = rng.randint(w, size=(3, 1))
         ys = rng.randint(h, size=(3, 1))
         points = np.concatenate((xs, ys), axis=1)
@@ -26,11 +27,11 @@ class Curve(Shape):
         return Curve(points, alpha)
 
     @staticmethod
-    def from_params(*params):
+    def _from_params(*params):
         return Curve(points=np.array(params[:-1]).reshape(3, 2), alpha=params[-1])
 
     @staticmethod
-    def from_normalized_params(w, h, *params):
+    def _from_normalized_params(w, h, *params):
         points = np.empty(shape=(3, 2))
         points[:, 0] = [int(x * w) for x in params[:-1][::2]]
         points[:, 1] = [int(y * h) for y in params[:-1][1::2]]
@@ -45,17 +46,17 @@ class Curve(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def params(self):
+    def _params(self):
         return self.points.reshape(-1, ).astype(np.float64)
 
-    def normalized_params(self, w, h):
+    def _normalized_params(self, w, h):
         return np.append(
             arr=self.points.reshape(-1, ).astype(np.float64) / np.array([w, h, w, h, w, h]),
             values=self.alpha
         )
 
     @staticmethod
-    def params_intervals():
+    def _params_intervals():
         return lambda w, h: np.array([w, h, w, h, w, h])
 
     def get_points(self, n):

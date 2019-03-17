@@ -9,6 +9,7 @@ from .shape import Shape
 class Ellipse(Shape):
 
     def __init__(self, a, b, h, k, r, alpha):
+        super().__init__()
         self.a = max(1, int(a))
         self.b = max(1, int(b))
         self.h = int(h)
@@ -17,7 +18,7 @@ class Ellipse(Shape):
         self.alpha = alpha
 
     @staticmethod
-    def random(w, h, alpha, rng, scale=1):
+    def _random(w, h, alpha, rng, scale=1):
         center_x = rng.randint(w)
         center_y = rng.randint(h)
         a = scale * rng.randint(1, w)
@@ -26,11 +27,11 @@ class Ellipse(Shape):
         return Ellipse(a=a, b=b, h=center_x, k=center_y, r=rotation, alpha=alpha)
 
     @staticmethod
-    def from_params(*params):
+    def _from_params(*params):
         return Ellipse(*params)
 
     @staticmethod
-    def from_normalized_params(w, h, *params):
+    def _from_normalized_params(w, h, *params):
         return Ellipse(
             a=int(params[0] * w),
             b=int(params[1] * h),
@@ -46,17 +47,17 @@ class Ellipse(Shape):
     def get_alpha(self):
         return self.alpha
 
-    def params(self):
+    def _params(self):
         return np.array([self.a, self.b, self.h, self.k, self.r], dtype=np.float64)
 
-    def normalized_params(self, w, h):
+    def _normalized_params(self, w, h):
         return np.append(np.array(
             [self.a, self.b, self.h, self.k, self.r],
             dtype=np.float64
         ) / np.array([w, h, w, h, math.pi]), self.alpha)
 
     @staticmethod
-    def params_intervals():
+    def _params_intervals():
         return lambda w, h: np.array([w, h, w - 1, h - 1, math.pi])
 
     def __str__(self):

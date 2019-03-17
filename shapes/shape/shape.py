@@ -7,24 +7,59 @@ from shapes.util import MIN_VALUE
 
 
 class Shape(object):
-    @staticmethod
-    @abstractmethod
-    def random(w, h, alpha, rng, scale):
-        raise NotImplementedError
+
+    def __init__(self):
+        self.__color = None
+
+    @property
+    def color(self):
+        return self.__color
+
+    @color.setter
+    def color(self, c):
+        self.__color = np.clip(c, 0, 255)
+
+    @classmethod
+    def random(cls, w, h, alpha, rng, scale):
+        shape = cls._random(w, h, alpha, rng, scale)
+        shape.color = Shape.random_color(rng)
+        return shape
 
     @staticmethod
     @abstractmethod
-    def from_params(*params):
+    def _random(w, h, alpha, rng, scale):
         raise NotImplementedError
+
+    @classmethod
+    def from_params(cls, *params):
+        shape = cls._from_params(*params[:-4], params[-1])
+        shape.color = params[-4:-1]
+        return shape
 
     @staticmethod
     @abstractmethod
-    def from_normalized_params(w, h, *params):
+    def _from_params(*params):
         raise NotImplementedError
+
+    @classmethod
+    def from_normalized_params(cls, w, h, *params):
+        shape = cls._from_normalized_params(w, h, *params[:-4], params[-1])
+        shape.color = params[-4:-1]
+        return shape
 
     @staticmethod
     @abstractmethod
-    def params_intervals():
+    def _from_normalized_params(w, h, *params):
+        raise NotImplementedError
+
+    @classmethod
+    def params_intervals(cls):
+        intervals = cls._params_intervals()
+        return lambda w, h: np.append(intervals(w, h), [255, 255, 255])
+
+    @staticmethod
+    @abstractmethod
+    def _params_intervals():
         raise NotImplementedError
 
     @abstractmethod
@@ -35,25 +70,43 @@ class Shape(object):
     def get_alpha(self):
         raise NotImplementedError
 
-    @abstractmethod
     def params(self):
-        raise NotImplementedError
+        return np.append(self._params(), self.color_expanded())
 
     @abstractmethod
-    def normalized_params(self, w, h):
+    def _params(self):
         raise NotImplementedError
 
-    def render(self, img, target, color):
+    def normalized_params(self, w, h):
+        params = self._normalized_params(w, h)
+        return np.append(np.append(params[:-1], self.color_expanded()), params[-1])
+
+    def color_expanded(self):
+        return [self.color[0], self.color[1], self.color[2]]
+
+    @abstractmethod
+    def _normalized_params(self, w, h):
+        raise NotImplementedError
+
+    def render(self, img, target):
         bounds = self.get_bounds(h=img.shape[0], w=img.shape[1])
         crop_bounds(bounds=bounds, h=img.shape[0], w=img.shape[1])
-        if color is None:
-            color = average_color(img=target, bounds=bounds)
-        if not isinstance(color, tuple):
-            color = tuple(color)
+        color = self.resolve_color(bounds, target)
         alpha = self.get_alpha()
         assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
         render(img=img, bounds=bounds, color=color, alpha=alpha)
         return bounds
+
+    def resolve_color(self, bounds, target):
+        if self.color is None:
+            return average_color(img=target, bounds=bounds)
+        if not isinstance(self.color, tuple):
+            return tuple(self.color)
+        return self.color
+
+    @staticmethod
+    def random_color(rng):
+        return rng.randint(0, 255, (3,))
 
 
 @njit("f8(i8, i8, i8, i8, i8)")

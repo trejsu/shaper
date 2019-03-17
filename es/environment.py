@@ -25,15 +25,15 @@ class Environment(object):
         return self.canvas.size()
 
     @abstractmethod
-    def evaluate(self, shape, color=None):
+    def evaluate(self, shape):
         raise NotImplementedError
 
     @abstractmethod
-    def evaluate_batch(self, shapes, color=None):
+    def evaluate_batch(self, shapes):
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, shape, color=None):
+    def step(self, shape):
         raise NotImplementedError
 
     def save_in_size(self, output, size):
@@ -47,10 +47,10 @@ class Environment(object):
                 if s is None:
                     break
                 else:
-                    cls, normalized_params, color = s
+                    cls, normalized_params = s
 
                 shape = cls.from_normalized_params(w, h, *normalized_params)
-                canvas.add(shape=shape, color=color)
+                canvas.add(shape=shape)
 
             canvas.save(output=output)
         else:
@@ -63,11 +63,10 @@ class Environment(object):
     def _remove_last_shape(self):
         self.current_shape_num -= 1
 
-    def _save_shape(self, shape, color):
+    def _save_shape(self, shape):
         self.shapes[self.current_shape_num] = (
             shape.__class__,
-            shape.normalized_params(*self.observation_shape()),
-            color
+            shape.normalized_params(*self.observation_shape())
         )
         self.current_shape_num += 1
 
@@ -84,19 +83,19 @@ class DistanceEnvironment(Environment):
         self.update_distance = update_l1 if metric == 'l1' else update_l2
         self.prev_distance = None
 
-    def evaluate(self, shape, color=None):
-        score = self.step(shape, color)
+    def evaluate(self, shape):
+        score = self.step(shape)
         self._undo()
         return score
 
-    def evaluate_batch(self, shapes, color=None):
+    def evaluate_batch(self, shapes):
         raise NotImplementedError
 
-    def step(self, shape, color=None):
+    def step(self, shape):
         self.prev_img = self.canvas.img.copy()
         self.prev_distance = self.distance.copy()
 
-        bounds = self.canvas.add(shape, color)
+        bounds = self.canvas.add(shape)
 
         self.update_distance(
             distance=self.distance,
@@ -106,7 +105,7 @@ class DistanceEnvironment(Environment):
         )
 
         if self.save_actions:
-            self._save_shape(shape, color)
+            self._save_shape(shape)
 
         return self._score()
 
@@ -129,10 +128,10 @@ class ClassificationEnvironment(Environment):
         super().__init__(canvas, save_actions, num_shapes)
         self.classifier = Classifier(label)
 
-    def evaluate(self, shape, color=None):
+    def evaluate(self, shape):
         raise NotImplementedError
 
-    def evaluate_batch(self, shapes, color=None):
+    def evaluate_batch(self, shapes):
         X = np.empty((len(shapes), 28, 28, 1))
 
         for i, shape in enumerate(shapes):
@@ -147,9 +146,9 @@ class ClassificationEnvironment(Environment):
         # print(f'probs = {probs}')
         return 1 - probs
 
-    def step(self, shape, color=None):
+    def step(self, shape):
         self.prev_img = self.canvas.img.copy()
-        self.canvas.add(shape, color)
+        self.canvas.add(shape)
 
     def _undo(self):
         self.canvas.img = self.prev_img

@@ -66,8 +66,8 @@ class Canvas(object):
             self.showed.set_data(img)
             self.fig.canvas.draw()
 
-    def add(self, shape, color):
-        return shape.render(self.img, self.target, color)
+    def add(self, shape):
+        return shape.render(self.img, self.target)
 
     def size(self):
         return self.img.shape[1], self.img.shape[0]
