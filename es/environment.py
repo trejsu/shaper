@@ -89,7 +89,7 @@ class DistanceEnvironment(Environment):
         return score
 
     def evaluate_batch(self, shapes):
-        raise NotImplementedError
+        return [self.evaluate(shape) for shape in shapes]
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
