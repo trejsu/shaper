@@ -157,3 +157,63 @@ class ClassificationEnvironment(Environment):
 
     def init(self):
         raise NotImplementedError
+
+
+class MixedEnvironment(Environment):
+
+    def __init__(self, canvas, save_actions, num_shapes, metric, label):
+        super().__init__(canvas, save_actions, num_shapes)
+        self.metric = metric
+        self.distance = (l1_full if metric == 'l1' else l2_full)(
+            target=self.canvas.target,
+            x=self.canvas.img
+        )
+        self.update_distance = update_l1 if metric == 'l1' else update_l2
+        self.prev_distance = None
+        self.classifier = Classifier(label)
+
+    def init(self):
+        raise NotImplementedError
+
+    def evaluate(self, shape):
+        raise NotImplementedError
+
+    def evaluate_batch(self, shapes):
+        X = np.empty((len(shapes), 28, 28, 1))
+        distances = np.empty((len(shapes, )))
+
+        for i, shape in enumerate(shapes):
+            distances[i] = self.step(shape)
+            x = self.canvas.img
+            self._undo()
+            X[i] = x[:, :, :1] / 255
+
+        probs = self.classifier.predict(X)
+        return distances / probs
+
+    def step(self, shape):
+        self.prev_img = self.canvas.img.copy()
+        self.prev_distance = self.distance.copy()
+
+        bounds = self.canvas.add(shape)
+
+        self.update_distance(
+            distance=self.distance,
+            bounds=bounds,
+            img=self.canvas.img,
+            target=self.canvas.target
+        )
+
+        if self.save_actions:
+            self._save_shape(shape)
+
+        return self._score()
+
+    def _undo(self):
+        self.canvas.img = self.prev_img
+        self.distance = self.prev_distance
+        if self.save_actions:
+            self._remove_last_shape()
+
+    def _score(self):
+        return np.average(self.distance)

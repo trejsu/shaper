@@ -1,11 +1,11 @@
-import argparse
 import logging
 import time
 
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
-from es.environment import DistanceEnvironment, ClassificationEnvironment
+from es.environment import DistanceEnvironment, ClassificationEnvironment, MixedEnvironment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
@@ -27,7 +27,7 @@ def main(_):
         decay=args.scale_decay
     )
 
-    for i in range(1, args.n + 1):
+    for i in tqdm(range(1, args.n + 1)):
         best_score, best_shape = find_best_shape(env=env, strategy=random, action=i)
 
         strategy = pick_strategy(best_shape=best_shape, env=env)
@@ -89,6 +89,14 @@ def pick_environment(canvas):
     elif args.env == 'classification':
         return ClassificationEnvironment(
             canvas=canvas,
+            num_shapes=args.n,
+            save_actions=args.save_actions,
+            label=args.label
+        )
+    elif args.env == 'mixed':
+        return MixedEnvironment(
+            canvas=canvas,
+            metric=args.metric,
             num_shapes=args.n,
             save_actions=args.save_actions,
             label=args.label
