@@ -3,7 +3,6 @@ from abc import abstractmethod
 
 import numpy as np
 
-from es.classifier import Classifier
 from shapes.util import l2_full, l1_full, update_l1, update_l2
 
 log = logging.getLogger(__name__)
@@ -71,7 +70,7 @@ class Environment(object):
         self.current_shape_num += 1
 
 
-class DistanceEnvironment(Environment):
+class DistanceEnv(Environment):
 
     def __init__(self, canvas, save_actions, num_shapes, metric):
         super().__init__(canvas, save_actions, num_shapes)
@@ -122,11 +121,18 @@ class DistanceEnvironment(Environment):
         return self._score()
 
 
-class ClassificationEnvironment(Environment):
+class NNEnv(Environment):
 
-    def __init__(self, canvas, save_actions, num_shapes, label):
+    def __init__(self, canvas, save_actions, num_shapes, model_initializer):
         super().__init__(canvas, save_actions, num_shapes)
-        self.classifier = Classifier(label)
+        self.init_model = model_initializer
+        self.__model = None
+
+    @property
+    def model(self):
+        if self.__model is None:
+            self.__model = self.init_model()
+        return self.__model
 
     def evaluate(self, shape):
         raise NotImplementedError
@@ -137,14 +143,10 @@ class ClassificationEnvironment(Environment):
         for i, shape in enumerate(shapes):
             self.step(shape)
             x = self.canvas.img
-            # self.canvas.save(f'/tmp/{shape}.jpg')
             self._undo()
             X[i] = x[:, :, :1] / 255
 
-        # to minimalize
-        probs = self.classifier.predict(X)
-        # print(f'probs = {probs}')
-        return 1 - probs
+        return -self.model.predict(X)
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
@@ -159,9 +161,9 @@ class ClassificationEnvironment(Environment):
         raise NotImplementedError
 
 
-class MixedEnvironment(Environment):
+class MixedEnv(Environment):
 
-    def __init__(self, canvas, save_actions, num_shapes, metric, label):
+    def __init__(self, canvas, save_actions, num_shapes, metric, model_initializer):
         super().__init__(canvas, save_actions, num_shapes)
         self.metric = metric
         self.distance = (l1_full if metric == 'l1' else l2_full)(
@@ -170,7 +172,14 @@ class MixedEnvironment(Environment):
         )
         self.update_distance = update_l1 if metric == 'l1' else update_l2
         self.prev_distance = None
-        self.classifier = Classifier(label)
+        self.init_model = model_initializer
+        self.__model = None
+
+    @property
+    def model(self):
+        if self.__model is None:
+            self.__model = self.init_model()
+        return self.__model
 
     def init(self):
         raise NotImplementedError
@@ -188,7 +197,7 @@ class MixedEnvironment(Environment):
             self._undo()
             X[i] = x[:, :, :1] / 255
 
-        probs = self.classifier.predict(X)
+        probs = self.model.predict(X)
         return distances / probs
 
     def step(self, shape):

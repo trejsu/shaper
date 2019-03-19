@@ -1,14 +1,19 @@
 import logging
+import os
 import time
+
+# todo: remove and find another solution
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from es.environment import DistanceEnvironment, ClassificationEnvironment, MixedEnvironment
+from es.environment import DistanceEnv, NNEnv, MixedEnv
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
+from es.model import Classifier, Discriminator
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -79,28 +84,46 @@ def init():
 
 
 def pick_environment(canvas):
-    if args.env == 'distance':
-        return DistanceEnvironment(
+    def classifier():
+        return Classifier(args.label)
+
+    def discriminator():
+        return Discriminator(args.label)
+
+    return {
+        'distance': DistanceEnv(
             canvas=canvas,
             metric=args.metric,
             num_shapes=args.n,
             save_actions=args.save_actions
-        )
-    elif args.env == 'classification':
-        return ClassificationEnvironment(
+        ),
+        'C': NNEnv(
             canvas=canvas,
             num_shapes=args.n,
             save_actions=args.save_actions,
-            label=args.label
-        )
-    elif args.env == 'mixed':
-        return MixedEnvironment(
+            model_initializer=classifier
+        ),
+        'mixed-C': MixedEnv(
             canvas=canvas,
             metric=args.metric,
             num_shapes=args.n,
             save_actions=args.save_actions,
-            label=args.label
+            model_initializer=classifier
+        ),
+        'D': NNEnv(
+            canvas=canvas,
+            num_shapes=args.n,
+            save_actions=args.save_actions,
+            model_initializer=discriminator
+        ),
+        'mixed-D': MixedEnv(
+            canvas=canvas,
+            metric=args.metric,
+            num_shapes=args.n,
+            save_actions=args.save_actions,
+            model_initializer=discriminator
         )
+    }[args.env]
 
 
 def pick_strategy(best_shape, env):
@@ -195,9 +218,8 @@ if __name__ == '__main__':
                                             'not passed, will be the average target img color')
     flags.DEFINE_integer('label', None, '')
     flags.DEFINE_string('env', 'distance', 'Environment: distance - reward based on mse, '
-                                           'classification - reward based on classifier output '
-                                           '(should be used with label argument), '
-                                           'discriminator - reward based on discriminator output')
+                                           'C - reward based on classifier output '
+                                           'D - reward based on discriminator output')
 
     args = tf.app.flags.FLAGS
 
