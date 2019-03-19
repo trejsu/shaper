@@ -75,9 +75,14 @@ def update_l1(distance, bounds, img, target):
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
 
 
-def normalize(arr):
-    arr_minus_mean = np.array(arr) - np.mean(arr)
-    return arr_minus_mean if np.all(arr_minus_mean == 0) else arr_minus_mean / np.std(arr)
+def stardardize(x):
+    x_minus_mean = np.array(x) - np.mean(x)
+    return x_minus_mean if np.all(x_minus_mean == 0) else x_minus_mean / np.std(x)
+
+
+def normalize(x):
+    norm = np.sqrt((np.square(x)).sum())
+    return x if norm == 0 else x / norm
 
 
 @njit("i8[:,:](i8[:,:])")

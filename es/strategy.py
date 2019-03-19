@@ -8,7 +8,7 @@ from shapes.shape import Ellipse
 from shapes.shape import QuadrangleBrush, Quadrangle
 from shapes.shape import Rectangle
 from shapes.shape import Triangle
-from shapes.util import normalize
+from shapes.util import stardardize
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class RandomStrategy(Strategy):
         self.scores = scores
 
     def result(self):
-        best = np.argmin(self.scores)
+        best = np.argmax(self.scores)
         return self.shapes[best], self.scores[best]
 
     def _random_shape(self):
@@ -92,7 +92,7 @@ class SimpleEvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        self.best = np.argmin(self.scores)
+        self.best = np.armax(self.scores)
         self.mean = self.shapes[self.best].params()
 
     def result(self):
@@ -128,10 +128,11 @@ class EvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        normalized_scores = normalize(scores)
-        self.best = np.argmin(self.scores)
-        gradient = np.dot(normalized_scores.T, self.eps) / (self.n * self.sigma)
-        self.optimizer.step(gradient)
+        standardized_scores = stardardize(scores)
+        self.best = np.argmax(self.scores)
+        gradient = np.dot(standardized_scores.T, self.eps) / (self.n * self.sigma)
+        # gradient ascent
+        self.optimizer.step(-gradient)
 
     def result(self):
         return self.shapes[self.best], self.scores[self.best]

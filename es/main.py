@@ -33,19 +33,19 @@ def main(_):
     )
 
     for i in tqdm(range(1, args.n + 1)):
-        best_score, best_shape = find_best_shape(env=env, strategy=random, action=i)
+        best_reward, best_shape = find_best_shape(env=env, strategy=random, action=i)
 
         strategy = pick_strategy(best_shape=best_shape, env=env)
 
         for j in range(1, args.step + 1):
-            score, shape = find_best_shape(env=env, strategy=strategy)
+            reward, shape = find_best_shape(env=env, strategy=strategy)
 
-            if score < best_score:
-                best_score = score
+            if reward > best_reward:
+                best_reward = reward
                 best_shape = shape
 
         env.step(best_shape)
-        log.info(f'Action {i}, new score: {best_score:.4f}')
+        tqdm.write(f'Action {i}, new reward: {best_reward:.4f}')
 
         show()
 

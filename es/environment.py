@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shapes.util import l2_full, l1_full, update_l1, update_l2
+from shapes.util import l2_full, l1_full, update_l1, update_l2, normalize
 
 log = logging.getLogger(__name__)
 
@@ -83,12 +83,14 @@ class DistanceEnv(Environment):
         self.prev_distance = None
 
     def evaluate(self, shape):
-        score = self.step(shape)
+        reward = self.step(shape)
         self._undo()
-        return score
+        return reward
 
     def evaluate_batch(self, shapes):
-        return [self.evaluate(shape) for shape in shapes]
+        rewards = [self.evaluate(shape) for shape in shapes]
+        # print('evaluate batch rewards:', rewards)
+        return rewards
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
@@ -106,10 +108,10 @@ class DistanceEnv(Environment):
         if self.save_actions:
             self._save_shape(shape)
 
-        return self._score()
+        return self._reward()
 
-    def _score(self):
-        return np.average(self.distance)
+    def _reward(self):
+        return -np.average(self.distance)
 
     def _undo(self):
         self.canvas.img = self.prev_img
@@ -118,7 +120,7 @@ class DistanceEnv(Environment):
             self._remove_last_shape()
 
     def init(self):
-        return self._score()
+        return self._reward()
 
 
 class NNEnv(Environment):
@@ -146,7 +148,8 @@ class NNEnv(Environment):
             self._undo()
             X[i] = x[:, :, :1] / 255
 
-        return -self.model.predict(X)
+        # probability that given x is a specific number
+        return normalize(self.model.predict(X))
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
@@ -197,8 +200,9 @@ class MixedEnv(Environment):
             self._undo()
             X[i] = x[:, :, :1] / 255
 
-        probs = self.model.predict(X)
-        return distances / probs
+        # [0, 1] - the higher the better reward
+        model_output = normalize(self.model.predict(X))
+        return -distances / model_output
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
@@ -216,7 +220,7 @@ class MixedEnv(Environment):
         if self.save_actions:
             self._save_shape(shape)
 
-        return self._score()
+        return self._distance()
 
     def _undo(self):
         self.canvas.img = self.prev_img
@@ -224,5 +228,5 @@ class MixedEnv(Environment):
         if self.save_actions:
             self._remove_last_shape()
 
-    def _score(self):
+    def _distance(self):
         return np.average(self.distance)
