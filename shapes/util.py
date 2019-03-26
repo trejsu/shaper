@@ -28,12 +28,17 @@ def timeit(method):
 def resize_to_size(img, size):
     w = img.shape[1]
     h = img.shape[0]
+
+    if w == size and h == size:
+        return img
+
     if w > h:
         scale = size / w
     else:
         scale = size / h
     new_w = int(w * scale)
     new_h = int(h * scale)
+
     return resize(img=img, w=new_w, h=new_h)
 
 
