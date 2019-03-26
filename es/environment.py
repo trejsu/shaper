@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shapes.util import l2_full, l1_full, update_l1, update_l2, normalize
+from shapes.util import l2_full, l1_full, update_l1, update_l2
 
 log = logging.getLogger(__name__)
 
@@ -112,6 +112,7 @@ class DistanceEnv(Environment):
 
     def _reward(self):
         return -np.average(self.distance)
+        # return -np.sqrt(self.distance.sum())
 
     def _undo(self):
         self.canvas.img = self.prev_img
@@ -149,7 +150,8 @@ class NNEnv(Environment):
             X[i] = x[:, :, :1] / 255
 
         # probability that given x is a specific number
-        return normalize(self.model.predict(X))
+        model_output = self.model.predict(X)
+        return model_output
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
@@ -201,7 +203,7 @@ class MixedEnv(Environment):
             X[i] = x[:, :, :1] / 255
 
         # [0, 1] - the higher the better reward
-        model_output = normalize(self.model.predict(X))
+        model_output = self.model.predict(X)
         return -distances / model_output
 
     def step(self, shape):

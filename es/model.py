@@ -99,6 +99,6 @@ class Discriminator(Model):
                                               {self.X: batch, self.Y: labels})
             # print('real_prob', real_prob)
             # print('logits', logits)
-            result[batch_start:batch_end] = logits.reshape(10, )
+            result[batch_start:batch_end] = real_prob.reshape(10, )
 
         return result
