@@ -9,8 +9,6 @@ from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Ad
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
 
-ARGS = None
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 

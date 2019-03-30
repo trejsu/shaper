@@ -47,7 +47,10 @@ class Canvas(object):
         if target_img.shape[2] == 1:
             target_img = np.repeat(target_img, 3, axis=2)
 
-        return target_img
+        if np.max(target_img) <= 1:
+            target_img *= 255
+
+        return target_img.astype(np.uint8)
 
     def clear_and_resize(self, size):
         return Canvas(target=self.target_path, size=size, background=self.background)
