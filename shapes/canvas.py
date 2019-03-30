@@ -29,6 +29,11 @@ class Canvas(object):
         log.debug(f'Initialized canvas with target shape: {self.target.shape}')
         log.debug(f'Target min: {np.min(self.target)}, target max: {np.max(self.target)}')
 
+    @staticmethod
+    def without_target(size, background, channels):
+        target = np.empty((size, size, channels))
+        return Canvas(target=target, size=size, background=background)
+
     def _get_color(self, background):
         return average_color(self.target) if background is None \
             else hex_to_rgb(background) if isinstance(background, str) \
@@ -69,8 +74,8 @@ class Canvas(object):
             self.showed.set_data(img)
             self.fig.canvas.draw()
 
-    def add(self, shape, color):
-        return shape.render(self.img, self.target, color)
+    def add(self, shape):
+        return shape.render(self.img, self.target)
 
     def size(self):
         return self.img.shape[1], self.img.shape[0]
@@ -78,6 +83,10 @@ class Canvas(object):
     def save(self, output):
         log.debug(f'Saving image under {output}')
         mimg.imsave(output, self.img.astype(np.uint8))
+
+    def reset(self):
+        del self.img
+        self.img = np.full(self.target.shape, self.color, dtype=np.float)
 
     def _showable_img(self):
         return np.concatenate((self.target / 255, self.img / 255), axis=1)

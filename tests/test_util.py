@@ -5,7 +5,8 @@ import pytest
 
 from config import ROOT_DIR
 from shapes.shape import Quadrangle
-from shapes.util import resize, l2_full, update_l2, normalize, bounds_to_pixels, read_img, hex_to_rgb
+from shapes.util import resize, l2_full, update_l2, stardardize, bounds_to_pixels, read_img, \
+    hex_to_rgb
 
 
 @pytest.mark.parametrize("input_w, input_h, w, h", [
@@ -99,21 +100,21 @@ def test_broken_partial_l2(x1, y1, x2, y2, x3, y3, x4, y4):
         points=np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]], dtype=np.int64),
         alpha=0.5
     )
-    bounds = r.render(img, target, None)
+    bounds = r.render(img, target)
     update_l2(distance=distance, bounds=bounds, img=img, target=target)
     assert np.array_equal(distance, l2_full(target, img))
     assert np.average(distance) == np.average(l2_full(target, img))
 
 
-def test_normalize_should_not_return_nans_when_array_has_the_same_elements():
+def test_stardardize_should_not_return_nans_when_array_has_the_same_elements():
     arr = np.full(shape=(100,), fill_value=33)
-    normalized = normalize(arr)
+    normalized = stardardize(arr)
     assert not np.any(np.isnan(normalized))
 
 
-def test_normalize_should_return_the_same_values_when_array_has_the_same_elements():
+def test_stardardize_should_return_the_same_values_when_array_has_the_same_elements():
     arr = np.full(shape=(100,), fill_value=33)
-    normalized = normalize(arr)
+    normalized = stardardize(arr)
     assert np.all(normalized[0] == normalized)
 
 

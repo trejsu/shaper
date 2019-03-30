@@ -28,12 +28,17 @@ def timeit(method):
 def resize_to_size(img, size):
     w = img.shape[1]
     h = img.shape[0]
+
+    if w == size and h == size:
+        return img
+
     if w > h:
         scale = size / w
     else:
         scale = size / h
     new_w = int(w * scale)
     new_h = int(h * scale)
+
     return resize(img=img, w=new_w, h=new_h)
 
 
@@ -75,11 +80,14 @@ def update_l1(distance, bounds, img, target):
             target[y, min(x1, x2): max(x1, x2) + 1] - img[y, min(x1, x2): max(x1, x2) + 1])
 
 
-def normalize(arr):
-    arr_minus_mean = np.array(arr) - np.mean(arr)
-    if np.all(arr_minus_mean == 0):
-        return np.zeros(arr_minus_mean.shape)
-    return arr_minus_mean / np.std(arr)
+def stardardize(x):
+    x_minus_mean = np.array(x) - np.mean(x)
+    return x_minus_mean if np.all(x_minus_mean == 0) else x_minus_mean / np.std(x)
+
+
+def normalize(x):
+    norm = np.sqrt((np.square(x)).sum())
+    return x if norm == 0 else x / norm
 
 
 @njit("i8[:,:](i8[:,:])")
