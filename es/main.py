@@ -13,7 +13,6 @@ from es.environment import DistanceEnv
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
-from es.model import Classifier, Discriminator
 from es.reward import L1, L2, MSE
 
 logging.basicConfig(level=logging.INFO)
@@ -39,13 +38,13 @@ def main(_):
         strategy = pick_strategy(best_shape=best_shape, env=env)
 
         for j in range(1, args.step + 1):
-            reward, shape = find_best_shape(env=env, strategy=strategy)
+            reward, shape = find_best_shape(env=env, strategy=strategy, action=i)
 
             if reward > best_reward:
                 best_reward = reward
                 best_shape = shape
 
-        env.step(best_shape)
+        env.step(best_shape, i)
         tqdm.write(f'Action {i}, new reward: {best_reward:.4f}')
 
         show()
@@ -63,8 +62,8 @@ def main(_):
 
 
 def find_best_shape(env, strategy, action=None):
-    shapes = strategy.ask() if action is None else strategy.ask(action=action)
-    scores = env.evaluate_batch(shapes)
+    shapes = strategy.ask() if action is None else strategy.ask(action)
+    scores = env.evaluate_batch(shapes=shapes, n=action)
     strategy.tell(scores)
     shape, score = strategy.result()
     return score, shape
@@ -79,39 +78,47 @@ def init():
 
     show = show_function(canvas)
     env = pick_environment(canvas)
-    env.init()
     save = save_function(canvas, env)
 
     return env, show, save
 
 
 def pick_environment(canvas):
-    def classifier():
-        return Classifier(args.label)
+    reward_config = get_reward_config(canvas, args)
 
-    def discriminator():
-        return Discriminator(args.label)
+    return DistanceEnv(
+        canvas=canvas,
+        reward_config=reward_config,
+        num_shapes=args.n,
+        save_actions=args.save_actions
+    )
 
-    return {
-        'mse': DistanceEnv(
-            canvas=canvas,
-            reward=MSE(),
-            num_shapes=args.n,
-            save_actions=args.save_actions
-        ),
-        'l1': DistanceEnv(
-            canvas=canvas,
-            num_shapes=args.n,
-            save_actions=args.save_actions,
-            reward=L1()
-        ),
-        'l2': DistanceEnv(
-            canvas=canvas,
-            reward=L2(),
-            num_shapes=args.n,
-            save_actions=args.save_actions,
-        )
-    }[args.reward]
+
+def get_reward_config(canvas, config):
+    rewards = config.rewards.split(',')
+    assert len(rewards) > 0
+
+    thresholds = np.fromstring(config.rewards_thresholds, dtype=int, sep=',')
+    assert len(thresholds) > 0
+    assert thresholds[0] == 1
+
+    rewards_instances = {
+        'mse': MSE(canvas),
+        'l1': L1(canvas),
+        'l2': L2(canvas)
+    }
+
+    reward_config = {}
+    for a in range(1, config.n + 1):
+        for t_idx, t in enumerate(thresholds):
+            if a < t:
+                reward_config[a] = rewards_instances[rewards[t_idx - 1]]
+                break
+        else:
+            reward_config[a] = rewards_instances[rewards[-1]]
+
+    assert len(reward_config) == config.n
+    return reward_config
 
 
 def pick_strategy(best_shape, env):
@@ -182,7 +189,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer('n', None, 'Number of triangles to draw')
     flags.DEFINE_string('input', None, 'Target image path')
     flags.DEFINE_string('output', 'out.jpg', 'Output image path')
-    flags.DEFINE_integer('render_mode', 2, 'Render mode: 0 - click, 1 - automatic, 2 - no render')
+    flags.DEFINE_integer('render_mode', 2,
+                         'Render mode: 0 - click, 1 - automatic, 2 - no render')
     flags.DEFINE_float('alpha', 0.5, 'Alpha value [0, 1]')
     flags.DEFINE_integer('random', 100, '')
     flags.DEFINE_integer('sample', 10, '')
@@ -192,19 +200,23 @@ if __name__ == '__main__':
     flags.DEFINE_string('algorithm', 'natural', '')
     flags.DEFINE_string('optimizer', 'adam', '')
     flags.DEFINE_integer('shape_mode', 0, '')
-    flags.DEFINE_integer('resize', 100, 'Size to which input will be scaled before drawing - the '
-                                        'bigger the longer it will take but the more details can '
-                                        'be captured')
+    flags.DEFINE_integer('resize', 100,
+                         'Size to which input will be scaled before drawing - the '
+                         'bigger the longer it will take but the more details can '
+                         'be captured')
     flags.DEFINE_integer('output_size', 512, 'Output image size')
-    flags.DEFINE_boolean('save_actions', False, 'When not present, output-size parameter will be '
-                                                'ignored, and output image will be saved in size '
-                                                'equal to resize parameter')
+    flags.DEFINE_boolean('save_actions', False,
+                         'When not present, output-size parameter will be '
+                         'ignored, and output image will be saved in size '
+                         'equal to resize parameter')
     flags.DEFINE_integer('seed', None, '')
     flags.DEFINE_float('scale_decay', 0.00005, '')
-    flags.DEFINE_string('background', None, 'Initial background color (hex value without #), if '
-                                            'not passed, will be the average target img color')
+    flags.DEFINE_string('background', None,
+                        'Initial background color (hex value without #), if '
+                        'not passed, will be the average target img color')
     flags.DEFINE_integer('label', None, '')
-    flags.DEFINE_string('reward', 'mse', 'Reward: [mse, l2, l1]')
+    flags.DEFINE_string('rewards', 'mse', 'Reward: [mse, l2, l1]')
+    flags.DEFINE_string('rewards_thresholds', '1', '')
 
     args = tf.app.flags.FLAGS
 

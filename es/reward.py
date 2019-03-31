@@ -8,11 +8,7 @@ from shapes.util import mse_full, l1_full, update_l1, update_mse
 class Reward(object):
 
     @abstractmethod
-    def init(self, canvas):
-        raise NotImplementedError
-
-    @abstractmethod
-    def get(self, canvas, bounds):
+    def get(self, bounds):
         raise NotImplementedError
 
     @abstractmethod
@@ -22,9 +18,11 @@ class Reward(object):
 
 class DistanceReward(Reward):
 
-    def __init__(self):
+    def __init__(self, canvas):
+        self.canvas = canvas
         self.distance = None
         self.prev_distance = None
+        self.initialized = False
 
     @property
     @abstractmethod
@@ -40,19 +38,22 @@ class DistanceReward(Reward):
     def reward(self):
         raise NotImplementedError
 
-    def init(self, canvas):
+    def init(self):
         self.distance = self.distance_fun(
-            target=canvas.target,
-            x=canvas.img
+            target=self.canvas.target,
+            x=self.canvas.img
         )
+        self.initialized = True
 
-    def get(self, canvas, bounds):
+    def get(self, bounds):
+        if not self.initialized:
+            self.init()
         self.prev_distance = self.distance.copy()
         self.update_distance_fun(
             distance=self.distance,
             bounds=bounds,
-            img=canvas.img,
-            target=canvas.target
+            img=self.canvas.img,
+            target=self.canvas.target
         )
         return self.reward()
 

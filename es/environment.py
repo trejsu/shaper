@@ -9,31 +9,27 @@ log = logging.getLogger(__name__)
 
 
 class Environment(object):
-    def __init__(self, canvas, save_actions, num_shapes, reward):
+    def __init__(self, canvas, save_actions, num_shapes, reward_config):
         self.canvas = canvas
         self.save_actions = save_actions
         self.current_shape_num = 0
         self.shapes = [None] * num_shapes
         self.prev_img = None
-        self.reward = reward
-
-    @abstractmethod
-    def init(self):
-        raise NotImplementedError
+        self.reward_config = reward_config
 
     def observation_shape(self):
         return self.canvas.size()
 
     @abstractmethod
-    def evaluate(self, shape):
+    def evaluate(self, shape, n):
         raise NotImplementedError
 
     @abstractmethod
-    def evaluate_batch(self, shapes):
+    def evaluate_batch(self, shapes, n):
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, shape):
+    def step(self, shape, n):
         raise NotImplementedError
 
     def save_in_size(self, output, size):
@@ -57,7 +53,7 @@ class Environment(object):
             raise Exception("Cannot save in size, save_actions set to False")
 
     @abstractmethod
-    def _undo(self):
+    def _undo(self, n):
         raise NotImplementedError
 
     def _remove_last_shape(self):
@@ -74,35 +70,33 @@ class Environment(object):
 # todo: remove after adding nn rewards
 class DistanceEnv(Environment):
 
-    def __init__(self, canvas, save_actions, num_shapes, reward):
-        super().__init__(canvas, save_actions, num_shapes, reward)
-        self.reward = reward
+    def __init__(self, canvas, save_actions, num_shapes, reward_config):
+        super().__init__(canvas, save_actions, num_shapes, reward_config)
 
-    def evaluate(self, shape):
-        score = self.step(shape)
-        self._undo()
+    def evaluate(self, shape, n):
+        score = self.step(shape, n)
+        self._undo(n)
         return score
 
-    def evaluate_batch(self, shapes):
-        return [self.evaluate(shape) for shape in shapes]
+    def evaluate_batch(self, shapes, n):
+        return [self.evaluate(shape, n) for shape in shapes]
 
-    def step(self, shape):
+    def step(self, shape, n):
         self.prev_img = self.canvas.img.copy()
         bounds = self.canvas.add(shape)
 
         if self.save_actions:
             self._save_shape(shape)
 
-        return self.reward.get(self.canvas, bounds)
+        current_reward = self.reward_config[n]
+        return current_reward.get(bounds)
 
-    def _undo(self):
+    def _undo(self, n):
         self.canvas.img = self.prev_img
-        self.reward.undo()
+        current_reward = self.reward_config[n]
+        current_reward.undo()
         if self.save_actions:
             self._remove_last_shape()
-
-    def init(self):
-        self.reward.init(self.canvas)
 
 
 class NNEnv(Environment):

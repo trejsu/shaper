@@ -92,7 +92,7 @@ class SimpleEvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        self.best = np.armax(self.scores)
+        self.best = np.argmax(self.scores)
         self.mean = self.shapes[self.best].params()
 
     def result(self):
