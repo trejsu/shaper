@@ -5,7 +5,7 @@ import pytest
 
 from config import ROOT_DIR
 from shapes.shape import Quadrangle
-from shapes.util import resize, l2_full, update_l2, stardardize, bounds_to_pixels, read_img, \
+from shapes.util import resize, mse_full, update_mse, stardardize, bounds_to_pixels, read_img, \
     hex_to_rgb
 
 
@@ -23,65 +23,65 @@ def test_should_properly_resize_img(input_w, input_h, w, h):
     assert result.shape[1] == w
 
 
-def test_l2_full_should_be_all_zeros_when_target_and_x_are_identical():
+def test_mse_full_should_be_all_zeros_when_target_and_x_are_identical():
     target = np.random.random((100, 100))
     x = target.copy()
-    l2 = l2_full(target=target, x=x)
-    assert np.array_equal(l2, np.zeros(target.shape))
+    mse = mse_full(target=target, x=x)
+    assert np.array_equal(mse, np.zeros(target.shape))
 
 
-def test_l2_full_should_be_max_when_target_is_white_and_x_is_black():
+def test_mse_full_should_be_max_when_target_is_white_and_x_is_black():
     target = np.full((100, 100), 255)
     x = np.zeros((100, 100))
-    l2 = l2_full(target=target, x=x)
-    assert np.array_equal(l2, np.full(target.shape, 255 * 255))
+    mse = mse_full(target=target, x=x)
+    assert np.array_equal(mse, np.full(target.shape, 255 * 255))
 
 
-def test_l2_full_should_calculate_l2_properly():
+def test_mse_full_should_calculate_l2_properly():
     target = np.array([[2, 4], [4, 3]])
     x = np.array([[2, 5], [0, 2]])
-    l2 = l2_full(target=target, x=x)
-    assert np.array_equal(l2, np.array([[0, 1], [16, 1]]))
+    mse = mse_full(target=target, x=x)
+    assert np.array_equal(mse, np.array([[0, 1], [16, 1]]))
 
 
-def test_l2_full_should_return_float_array():
+def test_mse_full_should_return_float_array():
     target = np.random.random((100, 100))
     x = np.random.random((100, 100))
-    l2 = l2_full(target=target, x=x)
-    assert l2.dtype == np.float
+    mse = mse_full(target=target, x=x)
+    assert mse.dtype == np.float
 
 
-def test_update_l2():
-    l2 = np.zeros((100, 100, 3))
+def test_update_mse():
+    mse = np.zeros((100, 100, 3))
     bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
     img = np.random.random((100, 100, 3))
     target = np.random.random((100, 100, 3))
-    update_l2(l2, bounds, img, target)
-    assert np.all(l2[50, 50:61])
-    assert np.all(l2[51, 50:61])
-    assert np.all(l2[52, 50:61])
+    update_mse(mse, bounds, img, target)
+    assert np.all(mse[50, 50:61])
+    assert np.all(mse[51, 50:61])
+    assert np.all(mse[52, 50:61])
 
 
-def test_update_l2_should_calculate_the_same_values_as_full_l2_for_bounded_area():
-    l2 = np.zeros((100, 100, 3))
+def test_update_mse_should_calculate_the_same_values_as_full_mse_for_bounded_area():
+    mse = np.zeros((100, 100, 3))
     bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
     img = np.random.random((100, 100, 3))
     target = np.random.random((100, 100, 3))
-    update_l2(l2, bounds, img, target)
-    full = l2_full(target, img)
-    assert np.array_equal(full[np.where(l2 > 0)], l2[np.where(l2 > 0)])
+    update_mse(mse, bounds, img, target)
+    full = mse_full(target, img)
+    assert np.array_equal(full[np.where(mse > 0)], mse[np.where(mse > 0)])
 
 
-def test_update_l2_should_have_the_same_effect_as_full_l2():
+def test_update_mse_should_have_the_same_effect_as_full_mse():
     bounds = np.array([[50, 60, 50], [50, 60, 51], [50, 60, 52]])
     target = np.random.random((100, 100, 3))
     img = np.random.random((100, 100, 3))
-    l2 = l2_full(target, img)
+    mse = mse_full(target, img)
     img[50, 50:61] = 0.5
     img[51, 50:61] = 0.4
     img[52, 50:61] = 0.3
-    update_l2(l2, bounds, img, target)
-    assert np.array_equal(l2, l2_full(target, img))
+    update_mse(mse, bounds, img, target)
+    assert np.array_equal(mse, mse_full(target, img))
 
 
 @pytest.mark.parametrize("x1, y1, x2, y2, x3, y3, x4, y4", [
@@ -89,7 +89,7 @@ def test_update_l2_should_have_the_same_effect_as_full_l2():
     (140, -237, 421, 76, 47, 409, -233, 95),
     (427, 145, 139, 436, 108, 406, 396, 115)
 ])
-def test_broken_partial_l2(x1, y1, x2, y2, x3, y3, x4, y4):
+def test_broken_partial_mse(x1, y1, x2, y2, x3, y3, x4, y4):
     img = np.zeros((500, 500, 3))
     target = np.zeros((500, 500, 3))
     distance = np.zeros((500, 500, 3))
@@ -101,9 +101,9 @@ def test_broken_partial_l2(x1, y1, x2, y2, x3, y3, x4, y4):
         alpha=0.5
     )
     bounds = r.render(img, target)
-    update_l2(distance=distance, bounds=bounds, img=img, target=target)
-    assert np.array_equal(distance, l2_full(target, img))
-    assert np.average(distance) == np.average(l2_full(target, img))
+    update_mse(distance=distance, bounds=bounds, img=img, target=target)
+    assert np.array_equal(distance, mse_full(target, img))
+    assert np.average(distance) == np.average(mse_full(target, img))
 
 
 def test_stardardize_should_not_return_nans_when_array_has_the_same_elements():

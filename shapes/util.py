@@ -48,7 +48,7 @@ def resize(img, w, h):
     return np.array(result)
 
 
-def l2_full(target, x):
+def mse_full(target, x):
     return np.square(target - x)
 
 
@@ -61,7 +61,7 @@ def average_color(img):
 
 
 @njit("(f8[:,:,:], i8[:,:], f8[:,:,:], f8[:,:,:])")
-def update_l2(distance, bounds, img, target):
+def update_mse(distance, bounds, img, target):
     for i in range(len(bounds)):
         x1 = bounds[i, 0]
         x2 = bounds[i, 1]

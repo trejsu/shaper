@@ -9,11 +9,12 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from es.environment import DistanceEnv, NNEnv, MixedEnv
+from es.environment import DistanceEnv
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
 from es.model import Classifier, Discriminator
+from es.reward import L1, L2, MSE
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ def init():
 
     show = show_function(canvas)
     env = pick_environment(canvas)
+    env.init()
     save = save_function(canvas, env)
 
     return env, show, save
@@ -91,39 +93,25 @@ def pick_environment(canvas):
         return Discriminator(args.label)
 
     return {
-        'distance': DistanceEnv(
+        'mse': DistanceEnv(
             canvas=canvas,
-            metric=args.metric,
+            reward=MSE(),
             num_shapes=args.n,
             save_actions=args.save_actions
         ),
-        'C': NNEnv(
+        'l1': DistanceEnv(
             canvas=canvas,
             num_shapes=args.n,
             save_actions=args.save_actions,
-            model_initializer=classifier
+            reward=L1()
         ),
-        'mixed-C': MixedEnv(
+        'l2': DistanceEnv(
             canvas=canvas,
-            metric=args.metric,
+            reward=L2(),
             num_shapes=args.n,
             save_actions=args.save_actions,
-            model_initializer=classifier
-        ),
-        'D': NNEnv(
-            canvas=canvas,
-            num_shapes=args.n,
-            save_actions=args.save_actions,
-            model_initializer=discriminator
-        ),
-        'mixed-D': MixedEnv(
-            canvas=canvas,
-            metric=args.metric,
-            num_shapes=args.n,
-            save_actions=args.save_actions,
-            model_initializer=discriminator
         )
-    }[args.env]
+    }[args.reward]
 
 
 def pick_strategy(best_shape, env):
@@ -212,14 +200,11 @@ if __name__ == '__main__':
                                                 'ignored, and output image will be saved in size '
                                                 'equal to resize parameter')
     flags.DEFINE_integer('seed', None, '')
-    flags.DEFINE_string('metric', 'l2', '')
     flags.DEFINE_float('scale_decay', 0.00005, '')
     flags.DEFINE_string('background', None, 'Initial background color (hex value without #), if '
                                             'not passed, will be the average target img color')
     flags.DEFINE_integer('label', None, '')
-    flags.DEFINE_string('env', 'distance', 'Environment: distance - reward based on mse, '
-                                           'C - reward based on classifier output '
-                                           'D - reward based on discriminator output')
+    flags.DEFINE_string('reward', 'mse', 'Reward: [mse, l2, l1]')
 
     args = tf.app.flags.FLAGS
 

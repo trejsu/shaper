@@ -3,18 +3,19 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shapes.util import l2_full, l1_full, update_l1, update_l2
+from shapes.util import mse_full, l1_full, update_l1, update_mse
 
 log = logging.getLogger(__name__)
 
 
 class Environment(object):
-    def __init__(self, canvas, save_actions, num_shapes):
+    def __init__(self, canvas, save_actions, num_shapes, reward):
         self.canvas = canvas
         self.save_actions = save_actions
         self.current_shape_num = 0
         self.shapes = [None] * num_shapes
         self.prev_img = None
+        self.reward = reward
 
     @abstractmethod
     def init(self):
@@ -70,58 +71,38 @@ class Environment(object):
         self.current_shape_num += 1
 
 
+# todo: remove after adding nn rewards
 class DistanceEnv(Environment):
 
-    def __init__(self, canvas, save_actions, num_shapes, metric):
-        super().__init__(canvas, save_actions, num_shapes)
-        self.metric = metric
-        self.distance = (l1_full if metric == 'l1' else l2_full)(
-            target=self.canvas.target,
-            x=self.canvas.img
-        )
-        self.update_distance = update_l1 if metric == 'l1' else update_l2
-        self.prev_distance = None
+    def __init__(self, canvas, save_actions, num_shapes, reward):
+        super().__init__(canvas, save_actions, num_shapes, reward)
+        self.reward = reward
 
     def evaluate(self, shape):
-        reward = self.step(shape)
+        score = self.step(shape)
         self._undo()
-        return reward
+        return score
 
     def evaluate_batch(self, shapes):
-        rewards = [self.evaluate(shape) for shape in shapes]
-        # print('evaluate batch rewards:', rewards)
-        return rewards
+        return [self.evaluate(shape) for shape in shapes]
 
     def step(self, shape):
         self.prev_img = self.canvas.img.copy()
-        self.prev_distance = self.distance.copy()
-
         bounds = self.canvas.add(shape)
-
-        self.update_distance(
-            distance=self.distance,
-            bounds=bounds,
-            img=self.canvas.img,
-            target=self.canvas.target
-        )
 
         if self.save_actions:
             self._save_shape(shape)
 
-        return self._reward()
-
-    def _reward(self):
-        return -np.average(self.distance)
-        # return -np.sqrt(self.distance.sum())
+        return self.reward.get(self.canvas, bounds)
 
     def _undo(self):
         self.canvas.img = self.prev_img
-        self.distance = self.prev_distance
+        self.reward.undo()
         if self.save_actions:
             self._remove_last_shape()
 
     def init(self):
-        return self._reward()
+        self.reward.init(self.canvas)
 
 
 class NNEnv(Environment):
@@ -171,11 +152,11 @@ class MixedEnv(Environment):
     def __init__(self, canvas, save_actions, num_shapes, metric, model_initializer):
         super().__init__(canvas, save_actions, num_shapes)
         self.metric = metric
-        self.distance = (l1_full if metric == 'l1' else l2_full)(
+        self.distance = (l1_full if metric == 'l1' else mse_full)(
             target=self.canvas.target,
             x=self.canvas.img
         )
-        self.update_distance = update_l1 if metric == 'l1' else update_l2
+        self.update_distance = update_l1 if metric == 'l1' else update_mse
         self.prev_distance = None
         self.init_model = model_initializer
         self.__model = None
