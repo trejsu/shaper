@@ -1,10 +1,13 @@
 import logging
+from collections import namedtuple
 
 import numpy as np
+from keras.datasets import mnist
 from tqdm import tqdm
 
 from es.environment import DistanceEnv
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
+from es.reward import MSE, L1, L2
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
 
@@ -13,14 +16,25 @@ log = logging.getLogger(__name__)
 
 
 def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.64,
-    sigma_factor=0.03, algorithm='natural', optimizer='adam', shape_mode=0, seed=None, metric='l2',
-    scale_decay=0.00005, background=None):
+    sigma_factor=0.03, algorithm='natural', optimizer='adam', shape_mode=0, seed=None,
+    rewards='mse', rewards_thresholds='1',
+    scale_decay=0.00005, background=None, save_all=False, save_actions=False):
     rng = np.random.RandomState(seed=seed if seed is not None else np.random.randint(0, 2 ** 32))
 
-    result = np.empty(images.shape)
+    if save_all:
+        result = [np.empty(images.shape) for _ in range(n)]
+    else:
+        result = np.empty(images.shape)
 
     for idx in tqdm(range(len(images))):
-        env = init(input=images[idx], background=background, metric=metric, n=n)
+        env = init(
+            input=images[idx],
+            background=background,
+            rewards=rewards,
+            n=n,
+            save_actions=save_actions,
+            rewards_thresholds=rewards_thresholds
+        )
 
         random_strategy = RandomStrategy(
             random,
@@ -41,40 +55,82 @@ def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.
                                      shape_mode=shape_mode, rng=rng)
 
             for j in range(1, step + 1):
-                score, shape = find_best_shape(env=env, strategy=strategy)
+                score, shape = find_best_shape(env=env, strategy=strategy, action=i)
 
                 if score > best_score:
                     best_score = score
                     best_shape = shape
 
-            env.step(best_shape)
+            env.step(shape=best_shape, n=n)
+            if save_all:
+                result[i - 1][idx] = extract_drawing(env)
 
-        drawing = env.canvas.img
-        if drawing.shape[2] == 3:
-            drawing = drawing[:, :, :1]
-        result[idx] = drawing
+        if not save_all:
+            result[idx] = extract_drawing(env)
 
     return result
 
 
+def extract_drawing(env):
+    drawing = env.canvas.img
+    if drawing.shape[2] == 3:
+        drawing = drawing[:, :, :1]
+    return drawing
+
+
 def find_best_shape(env, strategy, action=None):
-    shapes = strategy.ask() if action is None else strategy.ask(action=action)
-    scores = [env.evaluate(shape) for shape in shapes]
+    shapes = strategy.ask() if action is None else strategy.ask(action)
+    scores = env.evaluate_batch(shapes=shapes, n=action)
     strategy.tell(scores)
     shape, score = strategy.result()
     return score, shape
 
 
-def init(input, background, metric, n):
+def get_reward_config(canvas, config):
+    rewards = config.rewards.split(',')
+    assert len(rewards) > 0
+
+    thresholds = np.fromstring(config.rewards_thresholds, dtype=int, sep=',')
+    assert len(thresholds) > 0
+    assert thresholds[0] == 1
+
+    rewards_instances = {
+        'mse': MSE(canvas),
+        'l1': L1(canvas),
+        'l2': L2(canvas)
+    }
+
+    reward_config = {}
+    for a in range(1, config.n + 1):
+        for t_idx, t in enumerate(thresholds):
+            if a < t:
+                reward_config[a] = rewards_instances[rewards[t_idx - 1]]
+                break
+        else:
+            reward_config[a] = rewards_instances[rewards[-1]]
+
+    assert len(reward_config) == config.n
+    return reward_config
+
+
+def init(input, background, rewards, n, save_actions, rewards_thresholds):
     canvas = Canvas(
         target=input,
         size=max(input.shape[0], input.shape[1]),
         background=background
     )
 
-    env = DistanceEnv(canvas=canvas, num_shapes=n, save_actions=False, metric=metric)
+    Config = namedtuple('Config', ['n', 'rewards', 'rewards_thresholds'])
+    config = Config(n=n, rewards=rewards, rewards_thresholds=rewards_thresholds)
 
-    env.init()
+    reward_config = get_reward_config(canvas, config)
+
+    env = DistanceEnv(
+        canvas=canvas,
+        reward_config=reward_config,
+        num_shapes=n,
+        save_actions=save_actions
+    )
 
     return env
 
@@ -127,31 +183,37 @@ def pick_strategy(best_shape, env, algorithm, optimizer, alpha, sample, sigma_fa
 
 if __name__ == '__main__':
     import argparse
-    import os
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--adv-samples", type=str, required=True)
+    parser.add_argument("--output-path", type=str, required=True)
 
     args = parser.parse_args()
 
-    BASE = '/Users/mchrusci/uj/shaper_data/adversarial'
+
+    def data_mnist():
+        (_, _), (X_test, _) = mnist.load_data()
+        X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
+        X_test = X_test.astype('float32')
+        X_test /= 255
+        print("Loaded MNIST test data.")
+        return X_test
 
 
-    def load(path):
-        adv_samples_path = os.path.join(BASE, path)
-        with np.load(adv_samples_path) as adv_samples:
-            X = adv_samples['X']
-            Y = adv_samples['Y']
-            pred = adv_samples['pred']
-            prob = adv_samples['prob']
-            log.info(f'X.shape - {X.shape}')
-            log.info(f'Y.shape - {Y.shape}')
-            log.info(f'pred.shape - {pred.shape}')
-            log.info(f'prob.shape - {prob.shape}')
-        return X, Y, pred, prob
+    # def load(path):
+    #     adv_samples_path = os.path.join(BASE, path)
+    #     with np.load(adv_samples_path) as adv_samples:
+    #         X = adv_samples['X']
+    #         Y = adv_samples['Y']
+    #         pred = adv_samples['pred']
+    #         prob = adv_samples['prob']
+    #         log.info(f'X.shape - {X.shape}')
+    #         log.info(f'Y.shape - {Y.shape}')
+    #         log.info(f'pred.shape - {pred.shape}')
+    #         log.info(f'prob.shape - {prob.shape}')
+    #     return X, Y, pred, prob
 
-
-    X, Y, _, _ = load(args.adv_samples)
-    X_redrawned = draw(images=X, n=20, alpha=0.8, background='000000')
-    redrawned_basename = args.adv_samples.split('.npz')[0] + '-redrawned.npz'
-    np.savez(os.path.join(BASE, redrawned_basename), X=X_redrawned, Y=Y)
+    X = data_mnist()
+    X_redrawned = draw(images=X, n=100, alpha=0.8, background='000000', save_all=True)
+    assert len(X_redrawned) == 100
+    for n in range(1, 101):
+        np.savez(args.output_path % n, targets=X, drawings=X_redrawned[n - 1])
