@@ -13,14 +13,18 @@ log = logging.getLogger(__name__)
 
 
 class Canvas(object):
-    def __init__(self, target, size, background):
+    def __init__(self, target, size, background, from_target=False):
         target_img = self._get_target_img(target)
         self.target = resize_to_size(img=target_img, size=size).astype(np.float)
 
         self.background = background
         self.color = self._get_color(background)
 
-        self.img = np.full(self.target.shape, self.color, dtype=np.float)
+        if from_target:
+            self.img = self.target.copy()
+        else:
+            self.img = np.full(self.target.shape, self.color, dtype=np.float)
+
         assert self.target.shape == self.img.shape, 'Target and img must have the same shape'
 
         self.showed = None
@@ -84,9 +88,12 @@ class Canvas(object):
         log.debug(f'Saving image under {output}')
         mimg.imsave(output, self.img.astype(np.uint8))
 
-    def reset(self):
+    def reset(self, from_target=False):
         del self.img
-        self.img = np.full(self.target.shape, self.color, dtype=np.float)
+        if from_target:
+            self.img = self.target.copy()
+        else:
+            self.img = np.full(self.target.shape, self.color, dtype=np.float)
 
     def _showable_img(self):
         return np.concatenate((self.target / 255, self.img / 255), axis=1)
