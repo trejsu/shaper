@@ -61,7 +61,7 @@ class Environment(object):
         bounds = self.canvas.add(shape)
 
         current_reward = self.reward_config[n]
-        if isinstance(current_reward, DistanceReward):
+        if isinstance(current_reward, DistanceReward) or isinstance(current_reward, Mixed):
             current_reward.update(bounds)
 
         if self.save_actions:

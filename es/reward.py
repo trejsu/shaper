@@ -80,7 +80,7 @@ class L2(DistanceReward):
         return update_mse
 
     def reward(self):
-        return -np.sqrt(self.distance.sum())
+        return np.sqrt(self.distance.sum())
 
 
 class L1(DistanceReward):
@@ -94,7 +94,7 @@ class L1(DistanceReward):
         return update_l1
 
     def reward(self):
-        return -np.mean(self.distance)
+        return np.mean(self.distance)
 
 
 class MSE(DistanceReward):
@@ -108,7 +108,7 @@ class MSE(DistanceReward):
         return update_mse
 
     def reward(self):
-        return -np.mean(self.distance)
+        return np.mean(self.distance)
 
 
 class Activation(Reward):
@@ -126,12 +126,10 @@ class Activation(Reward):
             self.target_activations = self.model.get_activations(self.canvas.target)
         img_activations = self.model.get_activations(X)
         target_activations = np.repeat(self.target_activations, X.shape[0], axis=0)
-        reward = -self._mean(mse_full(target_activations, img_activations))
+        # todo: np.mean with axis=(1,2,3)
+        reward = self._mean(mse_full(target_activations, img_activations))
         assert reward.shape[0] == X.shape[0], f'reward.shape = {reward.shape}'
         return reward
-
-    def undo(self):
-        pass
 
     def _mean(self, x):
         num_dims = len(x.shape)
@@ -154,8 +152,10 @@ class Mixed(Reward):
         rewards = [
             c * (r.get(bounds=B, batch=True, imgs=X) if isinstance(r, DistanceReward) else r.get(X))
             for r, c in zip(self.rewards, self.coeffs)]
+        # print(rewards)
         return np.sum(rewards, axis=0)
 
-    def undo(self):
+    def update(self, bounds):
         for r in self.rewards:
-            r.undo()
+            if isinstance(r, DistanceReward):
+                r.update(bounds)
