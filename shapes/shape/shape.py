@@ -94,15 +94,28 @@ class Shape(object):
         color = self.resolve_color(bounds, target)
         alpha = self.get_alpha()
         assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
-        render(img=img, bounds=bounds, color=color, alpha=alpha)
+        if img.shape[-1] == 1:
+            if isinstance(color, np.float64):
+                color = color.astype(np.int64)
+            assert isinstance(color, np.int64), f'color = {color}, type(color) = {type(color)}'
+            render_1_channel(img=img, bounds=bounds, color=color, alpha=alpha)
+        else:
+            assert isinstance(color, tuple), f'color = {color}, type(color) = {type(color)}'
+            render_3_channels(img=img, bounds=bounds, color=color, alpha=alpha)
         return bounds
 
     def resolve_color(self, bounds, target):
         if self.color is None:
-            return average_color(img=target, bounds=bounds)
+            if target.shape[-1] == 1:
+                return average_color_1_channel(img=target, bounds=bounds)
+            else:
+                return average_color_3_channels(img=target, bounds=bounds)
+        if target.shape[-1] == 1:
+            return self.color[0]
         if not isinstance(self.color, tuple):
             return tuple(self.color)
-        return self.color
+        else:
+            return self.color
 
     @staticmethod
     def random_color(rng):
@@ -115,7 +128,7 @@ def f(x1, y1, x2, y2, y):
 
 
 @njit("(f8[:,:,:], i8[:,:], Tuple((i8, i8, i8)), f8)")
-def render(img, bounds, color, alpha):
+def render_3_channels(img, bounds, color, alpha):
     a_current = 1 - alpha
     r, g, b = color
     a_r = r * alpha
@@ -129,8 +142,18 @@ def render(img, bounds, color, alpha):
             img[bounds[i, 2], x, 2] = img[bounds[i, 2], x, 2] * a_current + a_b
 
 
+@njit("(f8[:,:,:], i8[:,:], i8, f8)")
+def render_1_channel(img, bounds, color, alpha):
+    a_current = 1 - alpha
+    a_c = color * alpha
+
+    for i in range(len(bounds)):
+        for x in range(min(bounds[i, 0], bounds[i, 1]), max(bounds[i, 0], bounds[i, 1]) + 1):
+            img[bounds[i, 2], x, 0] = img[bounds[i, 2], x, 0] * a_current + a_c
+
+
 @njit("Tuple((i8, i8, i8))(f8[:,:,:], i8[:,:])")
-def average_color(img, bounds):
+def average_color_3_channels(img, bounds):
     r, g, b, pixels = 0, 0, 0, 1e-10
 
     for i in range(len(bounds)):
@@ -141,6 +164,18 @@ def average_color(img, bounds):
             pixels += 1
 
     return r // pixels, g // pixels, b // pixels
+
+
+@njit("i8(f8[:,:,:], i8[:,:])")
+def average_color_1_channel(img, bounds):
+    color, pixels = 0, 1e-10
+
+    for i in range(len(bounds)):
+        for x in range(min(bounds[i, 0], bounds[i, 1]), max(bounds[i, 0], bounds[i, 1]) + 1):
+            color += img[bounds[i, 2], x, 0]
+            pixels += 1
+
+    return color // pixels
 
 
 @njit("(i8[:,:], i8, i8)")

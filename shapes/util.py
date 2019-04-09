@@ -125,4 +125,5 @@ def read_img(path):
 
 
 def hex_to_rgb(hex):
-    return tuple(int(hex[i:i + 2], 16) for i in (0, 2, 4))
+    assert len(hex) in [2, 6]
+    return tuple(int(hex[i:i + 2], 16) for i in (0, 2, 4)) if len(hex) == 6 else int(hex, 16)
