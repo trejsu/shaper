@@ -3,11 +3,11 @@ from collections import namedtuple
 
 import numpy as np
 from keras.datasets import mnist
-from tqdm import tqdm
 
 from es.environment import Environment
+from es.model import ModelA
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
-from es.reward import MSE, L1, L2
+from es.reward import L1, L2, MSE, Activation, Mixed
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
 
@@ -15,10 +15,11 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+# todo: refactor to class
 def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.64,
     sigma_factor=0.03, algorithm='natural', optimizer='adam', shape_mode=0, seed=None,
-    rewards='mse', rewards_thresholds='1',
-    scale_decay=0.00005, background=None, save_all=False, save_actions=False):
+    rewards='mse', rewards_thresholds='1', rewards_coeffs='1e-6,1',
+    scale_decay=0.00005, background=None, save_all=False, save_actions=False, channels=1):
     rng = np.random.RandomState(seed=seed if seed is not None else np.random.randint(0, 2 ** 32))
 
     if save_all:
@@ -26,14 +27,16 @@ def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.
     else:
         result = np.empty(images.shape)
 
-    for idx in tqdm(range(len(images))):
+    for idx in range(len(images)):
         env = init(
             input=images[idx],
             background=background,
             rewards=rewards,
             n=n,
             save_actions=save_actions,
-            rewards_thresholds=rewards_thresholds
+            rewards_thresholds=rewards_thresholds,
+            channels=channels,
+            rewards_coeffs=rewards_coeffs
         )
 
         random_strategy = RandomStrategy(
@@ -57,7 +60,7 @@ def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.
             for j in range(1, step + 1):
                 score, shape = find_best_shape(env=env, strategy=strategy, action=i)
 
-                if score > best_score:
+                if score < best_score:
                     best_score = score
                     best_shape = shape
 
@@ -94,10 +97,19 @@ def get_reward_config(canvas, config):
     assert len(thresholds) > 0
     assert thresholds[0] == 1
 
+    coeffs = np.fromstring(config.rewards_coeffs, dtype=float, sep=',')
+
     rewards_instances = {
         'mse': MSE(canvas),
         'l1': L1(canvas),
-        'l2': L2(canvas)
+        'l2': L2(canvas),
+        'conv1': Activation(canvas, ModelA, {"layer": ModelA.CONV1}),
+        'conv2': Activation(canvas, ModelA, {"layer": ModelA.CONV2}),
+        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE}),
+        'mse+conv1': Mixed(
+            rewards=[MSE(canvas), Activation(canvas, ModelA, {"layer": ModelA.CONV1})],
+            coeffs=coeffs
+        )
     }
 
     reward_config = {}
@@ -113,15 +125,21 @@ def get_reward_config(canvas, config):
     return reward_config
 
 
-def init(input, background, rewards, n, save_actions, rewards_thresholds):
+def init(input, background, rewards, n, save_actions, rewards_thresholds, channels, rewards_coeffs):
     canvas = Canvas(
         target=input,
         size=max(input.shape[0], input.shape[1]),
-        background=background
+        background=background,
+        channels=channels
     )
 
-    Config = namedtuple('Config', ['n', 'rewards', 'rewards_thresholds'])
-    config = Config(n=n, rewards=rewards, rewards_thresholds=rewards_thresholds)
+    Config = namedtuple('Config', ['n', 'rewards', 'rewards_thresholds', 'rewards_coeffs'])
+    config = Config(
+        n=n,
+        rewards=rewards,
+        rewards_thresholds=rewards_thresholds,
+        rewards_coeffs=rewards_coeffs
+    )
 
     reward_config = get_reward_config(canvas, config)
 
