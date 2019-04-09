@@ -32,28 +32,28 @@ class Environment(object):
         if isinstance(current_reward, DistanceReward):
             return [self.evaluate(shape, n) for shape in shapes]
         elif isinstance(current_reward, Mixed):
-            X = np.empty((len(shapes), 28, 28, 1))
-            imgs = np.empty((len(shapes), 28, 28, 3))
+            img_shape = self.canvas.img.shape
+            X = np.empty((len(shapes), img_shape[0], img_shape[1], img_shape[2]))
             B = []
 
             for i, shape in enumerate(shapes):
                 bounds = self.inner_step(shape)
                 x = self.canvas.img
                 self._undo()
-                X[i] = x[:, :, :1] / 255
-                imgs[i] = x
+                X[i] = x
                 B.append(bounds)
 
-            params = {"X": X, "bounds": B, "imgs": imgs}
+            params = {"X": X, "bounds": B}
             return current_reward.get(params)
         else:
-            X = np.empty((len(shapes), 28, 28, 1))
+            img_shape = self.canvas.img.shape
+            X = np.empty((len(shapes), img_shape[0], img_shape[1], img_shape[2]))
 
             for i, shape in enumerate(shapes):
                 self.inner_step(shape)
                 x = self.canvas.img
                 self._undo()
-                X[i] = x[:, :, :1] / 255
+                X[i] = x
 
             return current_reward.get(X)
 

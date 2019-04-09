@@ -123,7 +123,7 @@ class Activation(Reward):
         if self.model is None:
             self.model = self.model_cls(**self.model_params)
         if self.target_activations is None:
-            self.target_activations = self.model.get_activations(self.canvas.target / 255)
+            self.target_activations = self.model.get_activations(self.canvas.target)
         img_activations = self.model.get_activations(X)
         target_activations = np.repeat(self.target_activations, X.shape[0], axis=0)
         reward = -self._mean(mse_full(target_activations, img_activations))
@@ -151,9 +151,8 @@ class Mixed(Reward):
     def get(self, params):
         X = params['X']
         B = params['bounds']
-        I = params['imgs']
         rewards = [
-            c * (r.get(bounds=B, batch=True, imgs=I) if isinstance(r, DistanceReward) else r.get(X))
+            c * (r.get(bounds=B, batch=True, imgs=X) if isinstance(r, DistanceReward) else r.get(X))
             for r, c in zip(self.rewards, self.coeffs)]
         return np.sum(rewards, axis=0)
 

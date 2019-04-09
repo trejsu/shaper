@@ -41,15 +41,11 @@ class ModelA(Model):
         return model
 
     def get_activations(self, X):
-        data = X.copy()
-        assert 0 <= np.max(data) <= 1, f'np.max(data) = {np.max(data)}'
-
+        data = X / 255
         if len(data.shape) == 3:
             data = data.reshape(1, data.shape[0], data.shape[1], data.shape[2])
-
         if data.shape[3] == 3:
             data = data[:, :, :, :1]
-
         N = data.shape[0]
 
         shape = self.layer.shape.as_list()
