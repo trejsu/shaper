@@ -5,7 +5,7 @@ import numpy as np
 from keras.datasets import mnist
 from tqdm import tqdm
 
-from es.environment import DistanceEnv
+from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.reward import MSE, L1, L2
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
@@ -125,7 +125,7 @@ def init(input, background, rewards, n, save_actions, rewards_thresholds):
 
     reward_config = get_reward_config(canvas, config)
 
-    env = DistanceEnv(
+    env = Environment(
         canvas=canvas,
         reward_config=reward_config,
         num_shapes=n,

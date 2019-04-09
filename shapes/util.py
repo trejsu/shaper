@@ -57,7 +57,7 @@ def l1_full(target, x):
 
 
 def average_color(img):
-    return np.average(img, axis=(0, 1))
+    return np.mean(img, axis=(0, 1))
 
 
 @njit("(f8[:,:,:], i8[:,:], f8[:,:,:], f8[:,:,:])")

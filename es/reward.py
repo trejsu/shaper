@@ -86,7 +86,7 @@ class L1(DistanceReward):
         return update_l1
 
     def reward(self):
-        return -np.average(self.distance)
+        return -np.mean(self.distance)
 
 
 class MSE(DistanceReward):
@@ -100,9 +100,34 @@ class MSE(DistanceReward):
         return update_mse
 
     def reward(self):
-        return -np.average(self.distance)
+        return -np.mean(self.distance)
 
 
-class NN(Reward):
-    def get(self, canvas):
+class Activation(Reward):
+    def __init__(self, canvas, model_cls, model_params):
+        self.model_cls = model_cls
+        self.model = None
+        self.canvas = canvas
+        self.target_activations = None
+        self.model_params = model_params
+
+    def get(self, X):
+        if self.model is None:
+            self.model = self.model_cls(**self.model_params)
+        if self.target_activations is None:
+            self.target_activations = self.model.get_activations(self.canvas.target / 255)
+        img_activations = self.model.get_activations(X)
+        target_activations = np.repeat(self.target_activations, X.shape[0], axis=0)
+        reward = -self._mean(mse_full(target_activations, img_activations))
+        assert reward.shape[0] == X.shape[0], f'reward.shape = {reward.shape}'
+        return reward
+
+    def undo(self):
         pass
+
+    def _mean(self, x):
+        num_dims = len(x.shape)
+        if num_dims == 2:
+            return np.mean(x, axis=1)
+        else:
+            return self._mean(np.mean(x, axis=num_dims - 1))

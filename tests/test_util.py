@@ -103,7 +103,7 @@ def test_broken_partial_mse(x1, y1, x2, y2, x3, y3, x4, y4):
     bounds = r.render(img, target)
     update_mse(distance=distance, bounds=bounds, img=img, target=target)
     assert np.array_equal(distance, mse_full(target, img))
-    assert np.average(distance) == np.average(mse_full(target, img))
+    assert np.mean(distance) == np.mean(mse_full(target, img))
 
 
 def test_stardardize_should_not_return_nans_when_array_has_the_same_elements():

@@ -1,104 +1,79 @@
-import math
 from abc import abstractmethod
 
+import keras.backend as K
 import numpy as np
-import tensorflow as tf
-from capsNet import CapsNet
-from capsnetConfig import cfg
-from dcgan import FLAGS
-from dcganModel import DCGAN
+from keras.models import model_from_json
 
 
 class Model(object):
-    def __init__(self, label):
-        self.label = label
-
     @abstractmethod
-    def predict(self, X):
+    def get_activations(self, X):
         raise NotImplementedError
 
 
-class Classifier(Model):
-    def __init__(self, label):
-        super().__init__(label)
+class ModelA(Model):
+    NUM_CLASSES = 10
+    IMAGE_ROWS = 28
+    IMAGE_COLS = 28
+    NUM_CHANNELS = 1
+    BATCH_SIZE = 100
+    MODEL_PATH = '/Users/mchrusci/uj/blackbox-attacks/models/modelA'
 
-        model = CapsNet()
-        graph = model.graph
-        with graph.as_default():
-            self.sess = tf.Session(graph=graph)
-            saver = tf.train.Saver()
-            saver.restore(self.sess, tf.train.latest_checkpoint(cfg.logdir))
+    CONV1 = 0
+    CONV2 = 2
+    DENSE = 6
 
-        self.softmax_v = model.softmax_v
-        self.X = model.X
-        self.labels = model.labels
+    def __init__(self, layer):
+        assert layer in [self.CONV1, self.CONV2, self.DENSE]
 
-    def predict(self, X):
-        x_size = X.shape[0]
-        num_batches = math.ceil(x_size / cfg.batch_size)
-        probs = np.empty((x_size,))
+        self.model = ModelA._load_model()
+        self.layer = self.model.layers[layer].output
 
-        for batch_idx in range(num_batches):
-            labels = np.full((cfg.batch_size,), self.label)
-            batch_start = batch_idx * cfg.batch_size
-            batch_end = batch_start + cfg.batch_size
-            batch = X[batch_start:batch_end]
+    @staticmethod
+    def _load_model():
+        print(f'Loading model from {ModelA.MODEL_PATH}')
 
-            softmax = self.sess.run(self.softmax_v, {self.X: batch, self.labels: labels})
-            probs[batch_start:batch_end] = softmax.reshape(cfg.batch_size, 10)[:, self.label]
+        with open(ModelA.MODEL_PATH + '.json', 'r') as f:
+            json_string = f.read()
+            model = model_from_json(json_string)
 
-        return probs
+        model.load_weights(ModelA.MODEL_PATH)
+        return model
 
+    def get_activations(self, X):
+        assert 0 <= np.max(X) <= 1, f'np.max(X) = {np.max(X)}'
 
-class Discriminator(Model):
-    def __init__(self, label):
-        super().__init__(label)
+        if len(X.shape) == 3:
+            X = X.reshape(1, X.shape[0], X.shape[1], X.shape[2])
 
-        run_config = tf.ConfigProto(intra_op_parallelism_threads=FLAGS.cpu,
-                                    inter_op_parallelism_threads=FLAGS.cpu)
-        run_config.gpu_options.allow_growth = True
-        self.sess = tf.Session(config=run_config)
+        if X.shape[3] == 3:
+            X = X[:, :, :, :1]
 
-        dcgan = DCGAN(
-            self.sess,
-            input_width=FLAGS.input_width,
-            input_height=FLAGS.input_height,
-            output_width=FLAGS.output_width,
-            output_height=FLAGS.output_height,
-            batch_size=FLAGS.dcgan_batch_size,
-            sample_num=FLAGS.dcgan_batch_size,
-            y_dim=10,
-            z_dim=FLAGS.generate_test_images,
-            dataset_name=FLAGS.dcgan_dataset,
-            input_fname_pattern=FLAGS.input_fname_pattern,
-            crop=FLAGS.crop,
-            checkpoint_dir=FLAGS.checkpoint_dir,
-            sample_dir=FLAGS.sample_dir,
-            data_dir=FLAGS.data_dir
-        )
+        N = X.shape[0]
 
-        dcgan.load(FLAGS.checkpoint_dir)
+        shape = self.layer.shape.as_list()
+        shape[0] = N
 
-        self.real_prob = dcgan.D_
-        self.logits = dcgan.D_logits_
-        self.X = dcgan.G
-        self.Y = dcgan.y
+        result = np.empty(shape)
 
-    def predict(self, X):
-        x_size = X.shape[0]
-        num_batches = math.ceil(x_size / FLAGS.dcgan_batch_size)
-        result = np.empty((x_size,))
+        if self.BATCH_SIZE > N:
+            batch_size = N
+        else:
+            batch_size = self.BATCH_SIZE
 
-        for batch_idx in range(num_batches):
-            labels = np.eye(10)[np.full((FLAGS.dcgan_batch_size,), self.label, dtype=np.int)]
-            batch_start = batch_idx * FLAGS.dcgan_batch_size
-            batch_end = batch_start + FLAGS.dcgan_batch_size
-            batch = X[batch_start:batch_end]
+        num_batches = N // batch_size
 
-            real_prob, logits = self.sess.run([self.real_prob, self.logits],
-                                              {self.X: batch, self.Y: labels})
-            # print('real_prob', real_prob)
-            # print('logits', logits)
-            result[batch_start:batch_end] = real_prob.reshape(10, )
+        for i in range(num_batches):
+            batch_start = i * batch_size
+            batch_end = batch_start + batch_size
+
+            x = X[batch_start: batch_end]
+
+            r = K.get_session().run(
+                [self.layer],
+                feed_dict={self.model.input: x, K.learning_phase(): 0}
+            )[0]
+
+            result[batch_start: batch_end] = r
 
         return result

@@ -9,11 +9,12 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from es.environment import DistanceEnv
+from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
-from es.reward import L1, L2, MSE
+from es.reward import L1, L2, MSE, Activation
+from es.model import ModelA
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -86,7 +87,7 @@ def init():
 def pick_environment(canvas):
     reward_config = get_reward_config(canvas, args)
 
-    return DistanceEnv(
+    return Environment(
         canvas=canvas,
         reward_config=reward_config,
         num_shapes=args.n,
@@ -105,7 +106,10 @@ def get_reward_config(canvas, config):
     rewards_instances = {
         'mse': MSE(canvas),
         'l1': L1(canvas),
-        'l2': L2(canvas)
+        'l2': L2(canvas),
+        'conv1': Activation(canvas, ModelA, {"layer": ModelA.CONV1}),
+        'conv2': Activation(canvas, ModelA, {"layer": ModelA.CONV2}),
+        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE})
     }
 
     reward_config = {}
@@ -184,6 +188,7 @@ def save_final():
 
 
 if __name__ == '__main__':
+    # todo: back to argparse?
     flags = tf.app.flags
 
     flags.DEFINE_integer('n', None, 'Number of triangles to draw')
