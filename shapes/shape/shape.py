@@ -2,8 +2,11 @@ from abc import abstractmethod
 
 import numpy as np
 from numba import njit
+from tensorflow import flags
 
 from shapes.util import MIN_VALUE
+
+ARGS = flags.FLAGS
 
 
 class Shape(object):
@@ -32,8 +35,8 @@ class Shape(object):
 
     @classmethod
     def from_params(cls, *params):
-        shape = cls._from_params(*params[:-4], params[-1])
-        shape.color = params[-4:-1]
+        shape = cls._from_params(*params[:-(ARGS.channels + 1)], params[-1])
+        shape.color = params[-(ARGS.channels + 1):-1]
         return shape
 
     @staticmethod
@@ -43,8 +46,8 @@ class Shape(object):
 
     @classmethod
     def from_normalized_params(cls, w, h, *params):
-        shape = cls._from_normalized_params(w, h, *params[:-4], params[-1])
-        shape.color = params[-4:-1]
+        shape = cls._from_normalized_params(w, h, *params[:-(ARGS.channels + 1)], params[-1])
+        shape.color = params[-(ARGS.channels + 1):-1]
         return shape
 
     @staticmethod
@@ -55,7 +58,8 @@ class Shape(object):
     @classmethod
     def params_intervals(cls):
         intervals = cls._params_intervals()
-        return lambda w, h: np.append(intervals(w, h), [255, 255, 255])
+        color = [255, 255, 255] if ARGS.channels == 3 else [255]
+        return lambda w, h: np.append(intervals(w, h), color)
 
     @staticmethod
     @abstractmethod
@@ -82,7 +86,8 @@ class Shape(object):
         return np.append(np.append(params[:-1], self.color_expanded()), params[-1])
 
     def color_expanded(self):
-        return [self.color[0], self.color[1], self.color[2]]
+        return [self.color[0], self.color[1], self.color[2]] if ARGS.channels == 3 else [
+            self.color[0]]
 
     @abstractmethod
     def _normalized_params(self, w, h):
@@ -94,7 +99,7 @@ class Shape(object):
         color = self.resolve_color(bounds, target)
         alpha = self.get_alpha()
         assert 0 <= alpha <= 1, f'alpha out of bounds = {alpha}'
-        if img.shape[-1] == 1:
+        if ARGS.channels == 1:
             if isinstance(color, np.float64):
                 color = color.astype(np.int64)
             assert isinstance(color, np.int64), f'color = {color}, type(color) = {type(color)}'
@@ -106,11 +111,11 @@ class Shape(object):
 
     def resolve_color(self, bounds, target):
         if self.color is None:
-            if target.shape[-1] == 1:
+            if ARGS.channels == 1:
                 return average_color_1_channel(img=target, bounds=bounds)
             else:
                 return average_color_3_channels(img=target, bounds=bounds)
-        if target.shape[-1] == 1:
+        if ARGS.channels == 1:
             return self.color[0]
         if not isinstance(self.color, tuple):
             return tuple(self.color)
@@ -119,7 +124,7 @@ class Shape(object):
 
     @staticmethod
     def random_color(rng):
-        return rng.randint(0, 255, (3,))
+        return rng.randint(0, 255, (ARGS.channels,))
 
 
 @njit("f8(i8, i8, i8, i8, i8)")
