@@ -1,9 +1,8 @@
 import logging
-from abc import abstractmethod
 
 import numpy as np
 
-from es.reward import DistanceReward
+from es.reward import DistanceReward, Mixed
 
 log = logging.getLogger(__name__)
 
@@ -20,40 +19,58 @@ class Environment(object):
     def observation_shape(self):
         return self.canvas.size()
 
-    @abstractmethod
     def evaluate(self, shape, n):
-        score = self.step(shape, n)
-        self._undo(n)
-        return score
+        current_reward = self.reward_config[n]
+        assert isinstance(current_reward, DistanceReward)
+        bounds = self.inner_step(shape)
+        reward = current_reward.get(bounds)
+        self._undo()
+        return reward
 
-    @abstractmethod
     def evaluate_batch(self, shapes, n):
         current_reward = self.reward_config[n]
         if isinstance(current_reward, DistanceReward):
             return [self.evaluate(shape, n) for shape in shapes]
+        elif isinstance(current_reward, Mixed):
+            X = np.empty((len(shapes), 28, 28, 1))
+            imgs = np.empty((len(shapes), 28, 28, 3))
+            B = []
+
+            for i, shape in enumerate(shapes):
+                bounds = self.inner_step(shape)
+                x = self.canvas.img
+                self._undo()
+                X[i] = x[:, :, :1] / 255
+                imgs[i] = x
+                B.append(bounds)
+
+            params = {"X": X, "bounds": B, "imgs": imgs}
+            return current_reward.get(params)
         else:
             X = np.empty((len(shapes), 28, 28, 1))
 
             for i, shape in enumerate(shapes):
-                self.step(shape, n)
+                self.inner_step(shape)
                 x = self.canvas.img
-                self._undo(n)
+                self._undo()
                 X[i] = x[:, :, :1] / 255
 
             return current_reward.get(X)
 
-    @abstractmethod
     def step(self, shape, n):
-        self.prev_img = self.canvas.img.copy()
         bounds = self.canvas.add(shape)
 
         current_reward = self.reward_config[n]
         if isinstance(current_reward, DistanceReward):
-            # todo: save actions wont be working when using model based rewards
-            if self.save_actions:
-                self._save_shape(shape)
+            current_reward.update(bounds)
 
-            return current_reward.get(bounds)
+        if self.save_actions:
+            self._save_shape(shape)
+
+    def inner_step(self, shape):
+        self.prev_img = self.canvas.img.copy()
+        bounds = self.canvas.add(shape)
+        return bounds
 
     def save_in_size(self, output, size):
         if self.save_actions:
@@ -75,16 +92,8 @@ class Environment(object):
         else:
             raise Exception("Cannot save in size, save_actions set to False")
 
-    @abstractmethod
-    def _undo(self, n):
+    def _undo(self):
         self.canvas.img = self.prev_img
-        current_reward = self.reward_config[n]
-        current_reward.undo()
-        if self.save_actions:
-            self._remove_last_shape()
-
-    def _remove_last_shape(self):
-        self.current_shape_num -= 1
 
     def _save_shape(self, shape):
         self.shapes[self.current_shape_num] = (

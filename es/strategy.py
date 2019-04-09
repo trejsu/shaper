@@ -128,9 +128,10 @@ class EvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        standardized_scores = stardardize(scores)
+        std_scores = stardardize(scores)
+        assert len(std_scores.shape) == 1, f'std_scores.shape == {std_scores.shape}'
         self.best = np.argmax(self.scores)
-        gradient = np.dot(standardized_scores.T, self.eps) / (self.n * self.sigma)
+        gradient = np.dot(std_scores.T, self.eps) / (self.n * self.sigma)
         # gradient ascent
         self.optimizer.step(-gradient)
 

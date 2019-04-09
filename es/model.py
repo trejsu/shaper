@@ -41,15 +41,16 @@ class ModelA(Model):
         return model
 
     def get_activations(self, X):
-        assert 0 <= np.max(X) <= 1, f'np.max(X) = {np.max(X)}'
+        data = X.copy()
+        assert 0 <= np.max(data) <= 1, f'np.max(data) = {np.max(data)}'
 
-        if len(X.shape) == 3:
-            X = X.reshape(1, X.shape[0], X.shape[1], X.shape[2])
+        if len(data.shape) == 3:
+            data = data.reshape(1, data.shape[0], data.shape[1], data.shape[2])
 
-        if X.shape[3] == 3:
-            X = X[:, :, :, :1]
+        if data.shape[3] == 3:
+            data = data[:, :, :, :1]
 
-        N = X.shape[0]
+        N = data.shape[0]
 
         shape = self.layer.shape.as_list()
         shape[0] = N
@@ -67,7 +68,7 @@ class ModelA(Model):
             batch_start = i * batch_size
             batch_end = batch_start + batch_size
 
-            x = X[batch_start: batch_end]
+            x = data[batch_start: batch_end]
 
             r = K.get_session().run(
                 [self.layer],

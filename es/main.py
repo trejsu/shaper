@@ -13,7 +13,7 @@ from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
-from es.reward import L1, L2, MSE, Activation
+from es.reward import L1, L2, MSE, Activation, Mixed
 from es.model import ModelA
 
 logging.basicConfig(level=logging.INFO)
@@ -109,7 +109,11 @@ def get_reward_config(canvas, config):
         'l2': L2(canvas),
         'conv1': Activation(canvas, ModelA, {"layer": ModelA.CONV1}),
         'conv2': Activation(canvas, ModelA, {"layer": ModelA.CONV2}),
-        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE})
+        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE}),
+        'mse+conv1': Mixed(
+            rewards=[MSE(canvas), Activation(canvas, ModelA, {"layer": ModelA.CONV1})],
+            coeffs=[1e-6, 1]
+        )
     }
 
     reward_config = {}

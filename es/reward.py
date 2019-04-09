@@ -11,10 +11,6 @@ class Reward(object):
     def get(self, bounds):
         raise NotImplementedError
 
-    @abstractmethod
-    def undo(self):
-        raise NotImplementedError
-
 
 class DistanceReward(Reward):
 
@@ -45,20 +41,32 @@ class DistanceReward(Reward):
         )
         self.initialized = True
 
-    def get(self, bounds):
+    def get(self, bounds, batch=False, imgs=None):
         if not self.initialized:
             self.init()
+        if batch:
+            reward = np.empty((len(bounds),))
+            for i, b in enumerate(bounds):
+                self.update(b, imgs[i])
+                reward[i] = self.reward()
+                self.undo()
+        else:
+            self.update(bounds)
+            reward = self.reward()
+            self.undo()
+        return reward
+
+    def undo(self):
+        self.distance = self.prev_distance
+
+    def update(self, bounds, img=None):
         self.prev_distance = self.distance.copy()
         self.update_distance_fun(
             distance=self.distance,
             bounds=bounds,
-            img=self.canvas.img,
+            img=self.canvas.img if img is None else img,
             target=self.canvas.target
         )
-        return self.reward()
-
-    def undo(self):
-        self.distance = self.prev_distance
 
 
 class L2(DistanceReward):
@@ -131,3 +139,24 @@ class Activation(Reward):
             return np.mean(x, axis=1)
         else:
             return self._mean(np.mean(x, axis=num_dims - 1))
+
+
+class Mixed(Reward):
+    def __init__(self, rewards, coeffs):
+        assert all([isinstance(r, Reward) for r in rewards])
+        assert len(rewards) == len(coeffs)
+        self.rewards = rewards
+        self.coeffs = coeffs
+
+    def get(self, params):
+        X = params['X']
+        B = params['bounds']
+        I = params['imgs']
+        rewards = [
+            c * (r.get(bounds=B, batch=True, imgs=I) if isinstance(r, DistanceReward) else r.get(X))
+            for r, c in zip(self.rewards, self.coeffs)]
+        return np.sum(rewards, axis=0)
+
+    def undo(self):
+        for r in self.rewards:
+            r.undo()
