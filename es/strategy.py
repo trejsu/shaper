@@ -55,7 +55,7 @@ class RandomStrategy(Strategy):
         self.scores = scores
 
     def result(self):
-        best = np.argmax(self.scores)
+        best = np.argmin(self.scores)
         return self.shapes[best], self.scores[best]
 
     def _random_shape(self):
@@ -92,7 +92,7 @@ class SimpleEvolutionStrategy(Strategy):
 
     def tell(self, scores):
         self.scores = scores
-        self.best = np.argmax(self.scores)
+        self.best = np.argmin(self.scores)
         self.mean = self.shapes[self.best].params()
 
     def result(self):
@@ -130,7 +130,7 @@ class EvolutionStrategy(Strategy):
         self.scores = scores
         std_scores = stardardize(scores)
         assert len(std_scores.shape) == 1, f'std_scores.shape == {std_scores.shape}'
-        self.best = np.argmax(self.scores)
+        self.best = np.argmin(self.scores)
         gradient = np.dot(std_scores.T, self.eps) / (self.n * self.sigma)
         # gradient ascent
         self.optimizer.step(-gradient)

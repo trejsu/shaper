@@ -41,7 +41,7 @@ def main(_):
         for j in range(1, args.step + 1):
             reward, shape = find_best_shape(env=env, strategy=strategy, action=i)
 
-            if reward > best_reward:
+            if reward < best_reward:
                 best_reward = reward
                 best_shape = shape
 
@@ -104,6 +104,8 @@ def get_reward_config(canvas, config):
     assert len(thresholds) > 0
     assert thresholds[0] == 1
 
+    coeffs = np.fromstring(config.rewards_coeffs, dtype=float, sep=',')
+
     rewards_instances = {
         'mse': MSE(canvas),
         'l1': L1(canvas),
@@ -113,7 +115,7 @@ def get_reward_config(canvas, config):
         'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE}),
         'mse+conv1': Mixed(
             rewards=[MSE(canvas), Activation(canvas, ModelA, {"layer": ModelA.CONV1})],
-            coeffs=[1e-6, 1]
+            coeffs=coeffs
         )
     }
 
@@ -227,6 +229,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('label', None, '')
     flags.DEFINE_string('rewards', 'mse', 'Reward: [mse, l2, l1]')
     flags.DEFINE_string('rewards_thresholds', '1', '')
+    flags.DEFINE_string('rewards_coeffs', '1e-6,1', '')
     flags.DEFINE_integer('channels', '3', 'Number of color channels')
 
     args = tf.app.flags.FLAGS

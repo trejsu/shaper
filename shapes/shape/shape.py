@@ -1,12 +1,14 @@
 from abc import abstractmethod
+from collections import namedtuple
 
 import numpy as np
 from numba import njit
-from tensorflow import flags
 
 from shapes.util import MIN_VALUE
 
-ARGS = flags.FLAGS
+# todo: fix!
+Args = namedtuple('Args', ['channels'])
+ARGS = Args(channels=1)
 
 
 class Shape(object):

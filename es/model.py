@@ -31,8 +31,6 @@ class ModelA(Model):
 
     @staticmethod
     def _load_model():
-        print(f'Loading model from {ModelA.MODEL_PATH}')
-
         with open(ModelA.MODEL_PATH + '.json', 'r') as f:
             json_string = f.read()
             model = model_from_json(json_string)
