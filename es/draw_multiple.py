@@ -3,6 +3,7 @@ from collections import namedtuple
 
 import numpy as np
 from keras.datasets import mnist
+from tqdm import tqdm
 
 from es.environment import Environment
 from es.model import ModelA
@@ -27,7 +28,7 @@ def draw(images, n, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.
     else:
         result = np.empty(images.shape)
 
-    for idx in range(len(images)):
+    for idx in tqdm(range(len(images))):
         env = init(
             input=images[idx],
             background=background,
@@ -204,34 +205,26 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-path", type=str, required=True)
+    parser.add_argument("--reward", type=str, required=True)
 
     args = parser.parse_args()
 
+    NUM_SAMPLES = 1000
+
 
     def data_mnist():
-        (_, _), (X_test, _) = mnist.load_data()
+        (_, _), (X_test, Y_test) = mnist.load_data()
         X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
         X_test = X_test.astype('float32')
         X_test /= 255
         print("Loaded MNIST test data.")
-        return X_test
+        return X_test[0:NUM_SAMPLES], Y_test[0:NUM_SAMPLES]
 
 
-    # def load(path):
-    #     adv_samples_path = os.path.join(BASE, path)
-    #     with np.load(adv_samples_path) as adv_samples:
-    #         X = adv_samples['X']
-    #         Y = adv_samples['Y']
-    #         pred = adv_samples['pred']
-    #         prob = adv_samples['prob']
-    #         log.info(f'X.shape - {X.shape}')
-    #         log.info(f'Y.shape - {Y.shape}')
-    #         log.info(f'pred.shape - {pred.shape}')
-    #         log.info(f'prob.shape - {prob.shape}')
-    #     return X, Y, pred, prob
-
-    X = data_mnist()
-    X_redrawned = draw(images=X, n=100, alpha=0.8, background='000000', save_all=True)
-    assert len(X_redrawned) == 100
-    for n in range(1, 101):
-        np.savez(args.output_path % n, targets=X, drawings=X_redrawned[n - 1])
+    X, Y = data_mnist()
+    N = 20
+    X_redrawned = draw(images=X, n=N, alpha=0.7, background='00', save_all=True,
+                       rewards=args.reward)
+    assert len(X_redrawned) == N
+    for n in range(1, N + 1):
+        np.savez(args.output_path % n, targets=X, drawings=X_redrawned[n - 1], Y=Y)
