@@ -39,8 +39,6 @@ def get_reward_config(canvas, config):
         )
     }
 
-    print(rewards_instances)
-
     reward_config = {}
     for a in range(1, config.n + 1):
         for t_idx, t in enumerate(thresholds):
