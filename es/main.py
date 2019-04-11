@@ -13,8 +13,7 @@ from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
-from es.reward import L1, L2, MSE, Activation, Mixed
-from es.model import ModelA
+from es.draw_utils import find_best_shape, get_reward_config
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -62,14 +61,6 @@ def main(_):
         save(args.output)
 
 
-def find_best_shape(env, strategy, action=None):
-    shapes = strategy.ask() if action is None else strategy.ask(action)
-    scores = env.evaluate_batch(shapes=shapes, n=action)
-    strategy.tell(scores)
-    shape, score = strategy.result()
-    return score, shape
-
-
 def init():
     canvas = Canvas(
         target=args.input,
@@ -94,42 +85,6 @@ def pick_environment(canvas):
         num_shapes=args.n,
         save_actions=args.save_actions
     )
-
-
-def get_reward_config(canvas, config):
-    rewards = config.rewards.split(',')
-    assert len(rewards) > 0
-
-    thresholds = np.fromstring(config.rewards_thresholds, dtype=int, sep=',')
-    assert len(thresholds) > 0
-    assert thresholds[0] == 1
-
-    coeffs = np.fromstring(config.rewards_coeffs, dtype=float, sep=',')
-
-    rewards_instances = {
-        'mse': MSE(canvas),
-        'l1': L1(canvas),
-        'l2': L2(canvas),
-        'conv1': Activation(canvas, ModelA, {"layer": ModelA.CONV1}),
-        'conv2': Activation(canvas, ModelA, {"layer": ModelA.CONV2}),
-        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE}),
-        'mse+conv1': Mixed(
-            rewards=[MSE(canvas), Activation(canvas, ModelA, {"layer": ModelA.CONV1})],
-            coeffs=coeffs
-        )
-    }
-
-    reward_config = {}
-    for a in range(1, config.n + 1):
-        for t_idx, t in enumerate(thresholds):
-            if a < t:
-                reward_config[a] = rewards_instances[rewards[t_idx - 1]]
-                break
-        else:
-            reward_config[a] = rewards_instances[rewards[-1]]
-
-    assert len(reward_config) == config.n
-    return reward_config
 
 
 def pick_strategy(best_shape, env):
@@ -229,7 +184,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('label', None, '')
     flags.DEFINE_string('rewards', 'mse', 'Reward: [mse, l2, l1]')
     flags.DEFINE_string('rewards_thresholds', '1', '')
-    flags.DEFINE_string('rewards_coeffs', '1e-6,1', '')
+    flags.DEFINE_string('rewards_coeffs', '1,1', '')
     flags.DEFINE_integer('channels', '3', 'Number of color channels')
 
     args = tf.app.flags.FLAGS
