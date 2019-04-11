@@ -154,6 +154,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-path", type=str, required=True)
     parser.add_argument("--reward", type=str, required=True)
+    parser.add_argument("--coeffs", type=str, required=True)
 
     args = parser.parse_args()
 
@@ -172,7 +173,7 @@ if __name__ == '__main__':
     X, Y = data_mnist()
     N = 20
     X_redrawned = draw(images=X, n=N, alpha=0.7, background='00', save_all=True,
-                       rewards=args.reward)
+                       rewards=args.reward, rewards_coeffs=args.coeffs)
     assert len(X_redrawned) == N
     for n in range(1, N + 1):
         np.savez(args.output_path % n, targets=X, drawings=X_redrawned[n - 1], Y=Y)
