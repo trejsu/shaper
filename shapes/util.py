@@ -43,9 +43,10 @@ def resize_to_size(img, size):
 
 
 def resize(img, w, h):
-    result = Image.fromarray(img)
+    img_to_resize = img.reshape(img.shape[0], img.shape[1]) if img.shape[-1] == 1 else img
+    result = Image.fromarray(img_to_resize)
     result = result.resize((w, h), Image.ANTIALIAS)
-    return np.array(result)
+    return np.array(result).reshape((h, w, img.shape[2]))
 
 
 def mse_full(target, x):
