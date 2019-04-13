@@ -7,7 +7,7 @@ from es.reward import MSE, L2, L1
 from shapes.canvas import Canvas
 
 Config = namedtuple('Config', ['n', 'rewards', 'rewards_thresholds'], verbose=True)
-canvas = Canvas(target=np.empty((100, 100)), size=100, background=None)
+canvas = Canvas(target=np.empty((100, 100)), size=100, background=None, channels=1)
 
 
 def test_get_reward_config_for_single_reward_type():
