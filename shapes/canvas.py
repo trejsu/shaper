@@ -40,7 +40,7 @@ class Canvas(object):
     @staticmethod
     def without_target(size, background, channels):
         target = np.empty((size, size, channels))
-        return Canvas(target=target, size=size, background=background)
+        return Canvas(target=target, size=size, background=background, channels=3)
 
     def _get_color(self, background):
         return average_color(self.target) if background is None \
