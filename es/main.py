@@ -185,7 +185,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('rewards', 'mse', 'Reward: [mse, l2, l1]')
     flags.DEFINE_string('rewards_thresholds', '1', '')
     flags.DEFINE_string('rewards_coeffs', '1,1', '')
-    flags.DEFINE_integer('channels', '3', 'Number of color channels')
+    flags.DEFINE_integer('channels', '1', 'Number of color channels')
 
     args = tf.app.flags.FLAGS
 
