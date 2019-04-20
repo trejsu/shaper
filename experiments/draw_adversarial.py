@@ -11,8 +11,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with np.load(args.samples_path) as data:
-        X = data['X'][0:10]
-        Y = data['Y'][0:10]
+        X = data['X']
+        Y = data['Y']
 
     N = 100
 
