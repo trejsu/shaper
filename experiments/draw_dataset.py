@@ -8,6 +8,8 @@ def load_data():
         X = data['X']
         Y = data['Y']
 
+    Y = np.argmax(Y).reshape(-1, )
+
     if args.multiplication != 1:
         X = np.repeat(X, args.multiplication, axis=0)
         Y = np.repeat(Y, args.multiplication, axis=0)
@@ -15,6 +17,9 @@ def load_data():
         np.random.shuffle(X)
         np.random.seed(666)
         np.random.shuffle(Y)
+
+    assert X.shape[1] == 28 and X.shape[2] == 28 and X.shape[3] == 1, f'X.shape = {X.shape}'
+    assert len(Y.shape) == 1, f'Y.shape = {Y.shape}'
 
     return X, Y
 
