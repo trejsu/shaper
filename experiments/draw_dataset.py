@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--samples-path", type=str, required=True)
     parser.add_argument("--n", type=int, required=True)
-    parser.add_argument("--save-all", type=bool, required=True)
+    parser.add_argument("--save-all", action="store_true")
     parser.add_argument("--multiplication", type=int, default=1)
 
     args = parser.parse_args()
@@ -50,10 +50,10 @@ if __name__ == '__main__':
     if args.save_all:
         for n in range(1, args.n + 1):
             np.savez(
-                f'{base_path}-redrawned-{n}',
+                f'{base_path}-redrawn-{n}',
                 targets=X,
                 drawings=X_drawings[n - 1],
                 Y=Y
             )
     else:
-        np.savez(f'{base_path}-redrawn', targets=X, drawings=X_drawings, Y=Y)
+        np.savez(f'{base_path}-redrawn-{args.n}', targets=X, drawings=X_drawings, Y=Y)
