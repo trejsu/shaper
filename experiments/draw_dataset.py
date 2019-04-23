@@ -8,7 +8,7 @@ def load_data():
         X = data['X']
         Y = data['Y']
 
-    Y = np.argmax(Y).reshape(-1, )
+    Y = np.argmax(Y, axis=1).reshape(-1, )
 
     if args.multiplication != 1:
         X = np.repeat(X, args.multiplication, axis=0)
@@ -36,6 +36,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     X, Y = load_data()
+    print(f'Y.shape = {Y.shape}')
 
     drawer = Drawer(
         alpha=0.6,
