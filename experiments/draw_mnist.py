@@ -11,6 +11,8 @@ if __name__ == '__main__':
     parser.add_argument("--part-index", type=int, default=0)
     parser.add_argument("--samples-start", type=int, default=0)
     parser.add_argument("--samples-end", type=int, default=1000)
+    parser.add_argument("--n", type=int, required=True)
+    parser.add_argument("--save-all", action="store_true")
 
     args = parser.parse_args()
 
@@ -26,21 +28,32 @@ if __name__ == '__main__':
 
 
     X, Y = data_mnist()
-    N = 100
 
     drawer = Drawer(
-        alpha=0.7,
+        alpha=0.6,
         background=None,
-        save_all=True
+        save_all=args.save_all
     )
 
-    X_drawings = drawer.draw(images=X, n=N)
-    assert len(X_drawings) == N
+    X_drawings = drawer.draw(images=X, n=args.n)
 
-    for n in range(1, N + 1):
+    if args.save_all:
+        assert len(X_drawings) == args.n
+    else:
+        assert len(X_drawings) == X.shape[0]
+
+    if args.save_all:
+        for n in range(1, args.n + 1):
+            np.savez(
+                args.output_path % n + f'-part-{args.part_index}',
+                targets=X,
+                drawings=X_drawings[n - 1],
+                Y=Y
+            )
+    else:
         np.savez(
-            args.output_path % n + f'-part-{args.part_index}',
+            f'{args.output_path}-{args.n}-part-{args.part_index}',
             targets=X,
-            drawings=X_drawings[n - 1],
+            drawings=X_drawings,
             Y=Y
         )
