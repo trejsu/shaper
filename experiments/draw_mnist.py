@@ -13,12 +13,15 @@ if __name__ == '__main__':
     parser.add_argument("--samples-end", type=int, default=1000)
     parser.add_argument("--n", type=int, required=True)
     parser.add_argument("--save-all", action="store_true")
+    parser.add_argument("--representation", action="store_true")
+    parser.add_argument("--set", choices=["train", "test"], required=True)
 
     args = parser.parse_args()
 
 
     def data_mnist():
-        (X, Y), (_, _) = mnist.load_data()
+        train, test = mnist.load_data()
+        X, Y = train if args.set == "train" else test
         X = X.reshape(X.shape[0], 28, 28, 1)
         X = X.astype('float32')
         X /= 255
@@ -32,7 +35,8 @@ if __name__ == '__main__':
     drawer = Drawer(
         alpha=0.6,
         background=None,
-        save_all=args.save_all
+        save_all=args.save_all,
+        representation=args.representation
     )
 
     X_drawings = drawer.draw(images=X, n=args.n)

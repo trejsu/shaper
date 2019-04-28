@@ -18,7 +18,8 @@ class Drawer(object):
     def __init__(self, alpha=0.5, random=100, sample=10, step=100, learning_rate=4.64,
         sigma_factor=0.03, algorithm='natural', optimizer='adam', shape_mode=0, seed=None,
         rewards='mse', rewards_thresholds='1', rewards_coeffs='1e-6,1',
-        scale_decay=0.00005, background=None, save_all=False, save_actions=False, channels=1):
+        scale_decay=0.00005, background=None, save_all=False, save_actions=False, channels=1,
+        representation=False):
         self.alpha = alpha
         self.random = random
         self.sample = sample
@@ -39,13 +40,12 @@ class Drawer(object):
         self.channels = channels
         self.rng = np.random.RandomState(
             seed=self.seed if self.seed is not None else np.random.randint(0, 2 ** 32))
+        assert shape_mode or not representation, "Cannot use representation with shape mode = 0"
+        self.representation = representation
 
     def draw(self, images, n):
 
-        if self.save_all:
-            result = [np.empty(images.shape) for _ in range(n)]
-        else:
-            result = np.empty(images.shape)
+        result = self.initialize_result(images, n)
 
         for idx in tqdm(range(len(images))):
             env = self.init(input=images[idx], n=n)
@@ -74,11 +74,24 @@ class Drawer(object):
 
                 env.step(shape=best_shape, n=n)
                 if self.save_all:
-                    result[i - 1][idx] = env.canvas.img
+                    if self.representation:
+                        result[i - 1][idx] = env.representation
+                    else:
+                        result[i - 1][idx] = env.canvas.img
 
             if not self.save_all:
-                result[idx] = env.canvas.img
+                if self.representation:
+                    result[idx] = env.representation
+                else:
+                    result[idx] = env.canvas.img
 
+        return result
+
+    def initialize_result(self, images, n):
+        if self.save_all:
+            result = [np.empty(images.shape) for _ in range(n)]
+        else:
+            result = np.empty(images.shape)
         return result
 
     def init(self, input, n):
@@ -151,3 +164,29 @@ class Drawer(object):
                 rng=self.rng
             )
         return strategy
+
+
+class RepresentationDrawer(object):
+    def __init__(self, shape_cls, size, channels, background):
+        self.shape_cls = shape_cls
+        self.size = size
+        self.channels = channels
+        self.background = background
+
+    def draw(self, representation):
+        result = np.empty(
+            (representation.shape[0], self.size, self.size, self.channels, self.background))
+
+        for i, params in enumerate(representation):
+            c = Canvas.without_target(
+                size=self.size,
+                background=self.background,
+                channels=self.channels
+            )
+
+            for p in params:
+                shape = self.shape_cls.from_normalized_params(self.size, self.size, *p)
+                c.add(shape=shape)
+            result[i] = c.img
+
+        return result

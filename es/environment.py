@@ -101,3 +101,16 @@ class Environment(object):
             shape.normalized_params(*self.observation_shape())
         )
         self.current_shape_num += 1
+
+    @property
+    def representation(self):
+        assert self.save_actions, "Cannot retrieve representation with save_actions set to False"
+        expected_cls = self.shapes[0][0]
+        assert all([expected_cls == cls for cls, _ in self.shapes])
+        expected_params_len = len(self.shapes[0][1])
+        assert all([expected_params_len == len(params) for _, params in self.shapes])
+        result = np.empty((len(self.shapes), expected_params_len))
+        for i, s in enumerate(self.shapes):
+            _, params = s
+            result[i] = params
+        return result
