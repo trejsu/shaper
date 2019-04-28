@@ -3,11 +3,7 @@ from abc import abstractmethod
 
 import numpy as np
 
-from shapes.shape import Curve
-from shapes.shape import Ellipse
-from shapes.shape import QuadrangleBrush, Quadrangle
-from shapes.shape import Rectangle
-from shapes.shape import Triangle
+from shapes.shape import from_index
 from shapes.util import stardardize
 
 log = logging.getLogger(__name__)
@@ -59,15 +55,9 @@ class RandomStrategy(Strategy):
         return self.shapes[best], self.scores[best]
 
     def _random_shape(self):
-        shape = self.rng.randint(6) if self.shape_mode == 0 else self.shape_mode - 1
-        return {
-            0: Triangle.random,
-            1: Rectangle.random,
-            2: Ellipse.random,
-            3: Quadrangle.random,
-            4: QuadrangleBrush.random,
-            5: Curve.random,  # todo: choose only if resize == output size ?
-        }[shape](w=self.w, h=self.h, alpha=self.alpha, rng=self.rng, scale=self.scale)
+        index = self.rng.randint(6) if self.shape_mode == 0 else self.shape_mode - 1
+        return from_index(index) \
+            .random(w=self.w, h=self.h, alpha=self.alpha, rng=self.rng, scale=self.scale)
 
 
 class SimpleEvolutionStrategy(Strategy):
