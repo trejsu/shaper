@@ -1,7 +1,6 @@
 import numpy as np
 
-from es.model import ModelA
-from es.reward import MSE, L1, L2, Activation, Mixed
+from es.reward import MSE, L1, L2, Activation
 
 
 def find_best_shape(env, strategy, action=None):
@@ -27,26 +26,41 @@ def get_reward_config(canvas, config):
     }
 
     rewards_instances = {
-        'mse': MSE(canvas),
-        'l1': L1(canvas),
-        'l2': L2(canvas),
-        'conv1': Activation(canvas, ModelA, {"layer": ModelA.CONV1}),
-        'conv2': Activation(canvas, ModelA, {"layer": ModelA.CONV2}),
-        'dense': Activation(canvas, ModelA, {"layer": ModelA.DENSE}),
-        'mse+conv1': Mixed(
-            rewards=[MSE(canvas), Activation(canvas, ModelA, {"layer": ModelA.CONV1})],
-            coeffs=scale['mse+conv1'](coeffs)
-        )
+        'mse': lambda: MSE(canvas),
+        'l1': lambda: L1(canvas),
+        'l2': lambda: L2(canvas),
+        'conv1': conv1(canvas),
+        'conv2': conv2(canvas),
+        'dense': dense(canvas),
+        # 'mse+conv1': lambda: Mixed(
+        #     rewards=[MSE(canvas), conv1(canvas)],
+        #     coeffs=scale['mse+conv1'](coeffs)
+        # )
     }
 
     reward_config = {}
     for a in range(1, config.n + 1):
         for t_idx, t in enumerate(thresholds):
             if a < t:
-                reward_config[a] = rewards_instances[rewards[t_idx - 1]]
+                reward_config[a] = rewards_instances[rewards[t_idx - 1]]()
                 break
         else:
-            reward_config[a] = rewards_instances[rewards[-1]]
+            reward_config[a] = rewards_instances[rewards[-1]]()
 
     assert len(reward_config) == config.n
     return reward_config
+
+
+def conv1(canvas):
+    from es.model import ModelA
+    return lambda: Activation(canvas, ModelA, {"layer": ModelA.CONV1})
+
+
+def conv2(canvas):
+    from es.model import ModelA
+    return lambda: Activation(canvas, ModelA, {"layer": ModelA.CONV2})
+
+
+def dense(canvas):
+    from es.model import ModelA
+    return lambda: Activation(canvas, ModelA, {"layer": ModelA.DENSE})
