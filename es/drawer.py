@@ -184,8 +184,7 @@ class RepresentationDrawer(object):
         self.background = background
 
     def draw(self, representation):
-        result = np.empty(
-            (representation.shape[0], self.size, self.size, self.channels, self.background))
+        result = np.empty((representation.shape[0], self.size, self.size, self.channels))
 
         for i, params in enumerate(representation):
             c = Canvas.without_target(
