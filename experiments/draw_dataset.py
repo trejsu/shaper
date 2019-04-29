@@ -32,8 +32,13 @@ if __name__ == '__main__':
     parser.add_argument("--n", type=int, required=True)
     parser.add_argument("--save-all", action="store_true")
     parser.add_argument("--multiplication", type=int, default=1)
+    parser.add_argument("--shape-mode", choices=range(7), type=int, default=0)
+    parser.add_argument("--save-targets", action="store_true")
+    parser.add_argument("--representation", action="store_true")
 
     args = parser.parse_args()
+
+    assert args.shape_mode or not args.representation, "Cannot use representation with shape mode = 0"
 
     X, Y = load_data()
     print(f'Y.shape = {Y.shape}')
@@ -41,7 +46,10 @@ if __name__ == '__main__':
     drawer = Drawer(
         alpha=0.6,
         background=None,
-        save_all=args.save_all
+        save_all=args.save_all,
+        representation=args.representation,
+        shape_mode=args.shape_mode,
+        save_actions=args.representation
     )
 
     X_drawings = drawer.draw(images=X, n=args.n)
@@ -55,11 +63,15 @@ if __name__ == '__main__':
 
     if args.save_all:
         for n in range(1, args.n + 1):
-            np.savez(
-                f'{base_path}-redrawn-{n}',
-                targets=X,
-                drawings=X_drawings[n - 1],
-                Y=Y
-            )
+            path = f'{base_path}-redrawn-{n}'
+            drawings = X_drawings[n - 1]
+            if args.save_targets:
+                np.savez(path, targets=X, drawings=drawings, Y=Y)
+            else:
+                np.savez(path, drawings=drawings, Y=Y)
     else:
-        np.savez(f'{base_path}-redrawn-{args.n}', targets=X, drawings=X_drawings, Y=Y)
+        path = f'{base_path}-redrawn-{args.n}'
+        if args.save_targets:
+            np.savez(path, targets=X, drawings=X_drawings, Y=Y)
+        else:
+            np.savez(path, drawings=X_drawings, Y=Y)

@@ -87,3 +87,16 @@ def test_from_index_should_return_proper_shape_class_given_index(index, shape_cl
 def test_index_of_should_return_proper_index_given_shape_class(shape_cls, index):
     idx = index_of(shape_cls)
     assert idx == index
+
+
+@pytest.mark.parametrize("shape_cls, expected_params_len", [
+    (Triangle, 8),
+    (Rectangle, 7),
+    (Ellipse, 7),
+    (Quadrangle, 10),
+    (QuadrangleBrush, 9),
+    (Curve, 8)
+])
+def test_params_len_should_return_proper_value_for_each_shape_class(shape_cls, expected_params_len):
+    params_len = shape_cls.params_len()
+    assert params_len == expected_params_len

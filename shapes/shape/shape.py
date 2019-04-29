@@ -25,6 +25,11 @@ class Shape(object):
         self.__color = np.clip(c, 0, 255)
 
     @classmethod
+    def params_len(cls):
+        params_len_without_color = cls.PARAMS_LEN
+        return params_len_without_color + ARGS.channels + 1
+
+    @classmethod
     def random(cls, w, h, alpha, rng, scale):
         shape = cls._random(w, h, alpha, rng, scale)
         shape.color = Shape.random_color(rng)

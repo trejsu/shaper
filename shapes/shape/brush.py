@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class Brush(Shape):
+    PARAMS_LEN = 7
     SIZE_SCALE = 4
 
     def __init__(self, path, size, alpha):
@@ -56,7 +57,8 @@ class Brush(Shape):
 
     @staticmethod
     def _params_intervals():
-        return lambda w, h: np.append(Curve._params_intervals()(w, h), min(w, h) // Brush.SIZE_SCALE)
+        return lambda w, h: np.append(Curve._params_intervals()(w, h),
+                                      min(w, h) // Brush.SIZE_SCALE)
 
     def __str__(self):
         return f'Brush(path={self.path}, size={self.size})'

@@ -58,4 +58,4 @@ def test_result_should_return_the_best_score(strategy_class):
     scores = np.random.randint(100, size=(num_shapes,))
     strategy.tell(scores)
     _, score = strategy.result()
-    assert score == scores[np.argmax(scores)]
+    assert score == scores[np.argmin(scores)]

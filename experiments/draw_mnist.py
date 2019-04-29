@@ -15,8 +15,12 @@ if __name__ == '__main__':
     parser.add_argument("--save-all", action="store_true")
     parser.add_argument("--representation", action="store_true")
     parser.add_argument("--set", choices=["train", "test"], required=True)
+    parser.add_argument("--shape-mode", choices=range(7), type=int, default=0)
+    parser.add_argument("--save-targets", action="store_true")
 
     args = parser.parse_args()
+
+    assert args.shape_mode or not args.representation, "Cannot use representation with shape mode = 0"
 
 
     def data_mnist():
@@ -36,7 +40,9 @@ if __name__ == '__main__':
         alpha=0.6,
         background=None,
         save_all=args.save_all,
-        representation=args.representation
+        representation=args.representation,
+        shape_mode=args.shape_mode,
+        save_actions=args.representation
     )
 
     X_drawings = drawer.draw(images=X, n=args.n)
@@ -48,16 +54,31 @@ if __name__ == '__main__':
 
     if args.save_all:
         for n in range(1, args.n + 1):
+            if args.save_targets:
+                np.savez(
+                    args.output_path % n + f'-part-{args.part_index}',
+                    targets=X,
+                    drawings=X_drawings[n - 1],
+                    Y=Y
+                )
+            else:
+                np.savez(
+                    args.output_path % n + f'-part-{args.part_index}',
+                    drawings=X_drawings[n - 1],
+                    Y=Y
+                )
+
+    else:
+        if args.save_targets:
             np.savez(
-                args.output_path % n + f'-part-{args.part_index}',
+                f'{args.output_path}-{args.n}-part-{args.part_index}',
                 targets=X,
-                drawings=X_drawings[n - 1],
+                drawings=X_drawings,
                 Y=Y
             )
-    else:
-        np.savez(
-            f'{args.output_path}-{args.n}-part-{args.part_index}',
-            targets=X,
-            drawings=X_drawings,
-            Y=Y
-        )
+        else:
+            np.savez(
+                f'{args.output_path}-{args.n}-part-{args.part_index}',
+                drawings=X_drawings,
+                Y=Y
+            )

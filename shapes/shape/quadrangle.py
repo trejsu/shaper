@@ -9,6 +9,7 @@ from .triangle import rasterize_triangle
 
 
 class Quadrangle(Shape):
+    PARAMS_LEN = 8
 
     def __init__(self, points, alpha):
         super().__init__()
@@ -75,6 +76,7 @@ class Quadrangle(Shape):
 
 
 class Rectangle(Shape):
+    PARAMS_LEN = 5
 
     def __init__(self, cx, cy, w, h, rotation, alpha):
         super().__init__()

@@ -7,6 +7,7 @@ from .shape import Shape
 
 
 class Ellipse(Shape):
+    PARAMS_LEN = 5
 
     def __init__(self, a, b, h, k, r, alpha):
         super().__init__()

@@ -9,6 +9,7 @@ from es.environment import Environment
 from es.optimizer import GradientDescent, Adam, Momentum, Nesterov, Adadelta, Adagrad, RMSProp
 from es.strategy import RandomStrategy, EvolutionStrategy, SimpleEvolutionStrategy
 from shapes.canvas import Canvas
+from shapes.shape import from_shape_mode
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -88,11 +89,20 @@ class Drawer(object):
         return result
 
     def initialize_result(self, images, n):
-        if self.save_all:
-            result = [np.empty(images.shape) for _ in range(n)]
+        if self.representation:
+            shape_cls = from_shape_mode(self.shape_mode)
+            params_len = shape_cls.params_len()
+            shape = (images.shape[0], n, params_len)
+            print(f'n = {n}')
+            print(f'params_len = {params_len}')
+            print(f'shape = {shape}')
         else:
-            result = np.empty(images.shape)
-        return result
+            shape = images.shape
+
+        if self.save_all:
+            return [np.empty(shape) for _ in range(n)]
+        else:
+            return np.empty(shape)
 
     def init(self, input, n):
         canvas = Canvas(

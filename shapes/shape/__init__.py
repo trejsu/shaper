@@ -26,3 +26,7 @@ def index_of(shape):
         QuadrangleBrush: 4,
         Curve: 5
     }[shape]
+
+
+def from_shape_mode(mode):
+    return from_index(mode - 1)

@@ -6,6 +6,7 @@ from .shape import Shape
 
 
 class Curve(Shape):
+    PARAMS_LEN = 6
 
     def __init__(self, points, alpha):
         super().__init__()
