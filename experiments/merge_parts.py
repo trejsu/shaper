@@ -11,8 +11,10 @@ if __name__ == '__main__':
     parser.add_argument("--num-parts", type=int, required=True)
     parser.add_argument("--parts-path", type=str, required=True)
     parser.add_argument("--save-targets", action="store_true")
+    parser.add_argument("--drawings-dim", nargs='+', type=int, required=True)
 
     args = parser.parse_args()
+    args.drawings_dim = tuple(args.drawings_dim)
 
     part_size = args.num_samples // args.num_parts
 
@@ -20,7 +22,7 @@ if __name__ == '__main__':
         for n in range(1, args.n + 1):
             if args.save_targets:
                 targets = np.empty((args.num_samples, 28, 28, 1))
-            drawings = np.empty((args.num_samples, 28, 28, 1))
+            drawings = np.empty((args.num_samples,) + args.drawings_dim)
             Y = np.empty((args.num_samples,))
 
             for part in range(args.num_parts):
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     else:
         if args.save_targets:
             targets = np.empty((args.num_samples, 28, 28, 1))
-        drawings = np.empty((args.num_samples, 28, 28, 1))
+        drawings = np.empty((args.num_samples,) + args.drawings_dim)
         Y = np.empty((args.num_samples,))
 
         for part in range(args.num_parts):
