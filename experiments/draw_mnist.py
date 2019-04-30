@@ -29,7 +29,7 @@ if __name__ == '__main__':
         X = X.reshape(X.shape[0], 28, 28, 1)
         X = X.astype('float32')
         X /= 255
-        print("Loaded MNIST test data.")
+        print(f"Loaded MNIST {args.set} data.")
         return X[args.samples_start:args.samples_end], \
                Y[args.samples_start:args.samples_end]
 

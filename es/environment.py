@@ -106,11 +106,12 @@ class Environment(object):
     def representation(self):
         assert self.save_actions, "Cannot retrieve representation with save_actions set to False"
         expected_cls = self.shapes[0][0]
-        assert all([expected_cls == cls for cls, _ in self.shapes])
+        populated_shapes = self.shapes[0:self.current_shape_num]
+        assert all([expected_cls == cls for cls, _ in populated_shapes])
         expected_params_len = len(self.shapes[0][1])
-        assert all([expected_params_len == len(params) for _, params in self.shapes])
-        result = np.empty((len(self.shapes), expected_params_len))
-        for i, s in enumerate(self.shapes):
+        assert all([expected_params_len == len(params) for _, params in populated_shapes])
+        result = np.empty((len(populated_shapes), expected_params_len))
+        for i, s in enumerate(populated_shapes):
             _, params = s
             result[i] = params
         return result

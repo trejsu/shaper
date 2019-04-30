@@ -93,9 +93,6 @@ class Drawer(object):
             shape_cls = from_shape_mode(self.shape_mode)
             params_len = shape_cls.params_len()
             shape = (images.shape[0], n, params_len)
-            print(f'n = {n}')
-            print(f'params_len = {params_len}')
-            print(f'shape = {shape}')
         else:
             shape = images.shape
 
