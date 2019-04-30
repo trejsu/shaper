@@ -10,6 +10,7 @@ if __name__ == '__main__':
     parser.add_argument("--num-samples", type=int, required=True)
     parser.add_argument("--num-parts", type=int, required=True)
     parser.add_argument("--parts-path", type=str, required=True)
+    parser.add_argument("--save-targets", action="store_true")
 
     args = parser.parse_args()
 
@@ -17,7 +18,8 @@ if __name__ == '__main__':
 
     if '%d' in args.parts_path:
         for n in range(1, args.n + 1):
-            targets = np.empty((args.num_samples, 28, 28, 1))
+            if args.save_targets:
+                targets = np.empty((args.num_samples, 28, 28, 1))
             drawings = np.empty((args.num_samples, 28, 28, 1))
             Y = np.empty((args.num_samples,))
 
@@ -27,17 +29,22 @@ if __name__ == '__main__':
 
                 part_path = (args.parts_path % n) + f'-part-{part}.npz'
                 part_data = np.load(part_path)
-                targets[part_start:part_end] = part_data['targets']
+                if args.save_targets:
+                    targets[part_start:part_end] = part_data['targets']
                 drawings[part_start:part_end] = part_data['drawings']
                 Y[part_start:part_end] = part_data['Y']
 
-            np.savez(args.parts_path % n, targets=targets, drawings=drawings, Y=Y)
+            if args.save_targets:
+                np.savez(args.parts_path % n, targets=targets, drawings=drawings, Y=Y)
+            else:
+                np.savez(args.parts_path % n, drawings=drawings, Y=Y)
 
             for part in range(args.num_parts):
                 part_path = (args.parts_path % n) + f'-part-{part}.npz'
                 os.remove(part_path)
     else:
-        targets = np.empty((args.num_samples, 28, 28, 1))
+        if args.save_targets:
+            targets = np.empty((args.num_samples, 28, 28, 1))
         drawings = np.empty((args.num_samples, 28, 28, 1))
         Y = np.empty((args.num_samples,))
 
@@ -47,11 +54,15 @@ if __name__ == '__main__':
 
             part_path = f'{args.parts_path}-part-{part}.npz'
             part_data = np.load(part_path)
-            targets[part_start:part_end] = part_data['targets']
+            if args.save_targets:
+                targets[part_start:part_end] = part_data['targets']
             drawings[part_start:part_end] = part_data['drawings']
             Y[part_start:part_end] = part_data['Y']
 
-        np.savez(args.parts_path, targets=targets, drawings=drawings, Y=Y)
+        if args.save_targets:
+            np.savez(args.parts_path, targets=targets, drawings=drawings, Y=Y)
+        else:
+            np.savez(args.parts_path, drawings=drawings, Y=Y)
 
         for part in range(args.num_parts):
             part_path = f'{args.parts_path}-part-{part}.npz'
